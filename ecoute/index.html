@@ -384,17 +384,24 @@ async function chooseEngine() {
 function makeRec() {
   const r = new SR(); r.lang = LANG; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
   if ("processLocally" in r) r.processLocally = local;
-  r.onresult = e => { gotText = true; diag("Le texte arrive ✓"); let interim = "";
+  r.onresult = e => { gotText = true; aborts = 0; diag("Le texte arrive ✓"); let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) { const res = e.results[i]; if (res.isFinal) addFinal(res[0].transcript); else interim += res[0].transcript; }
     showInterim(interim.trim()); };
   r.onerror = e => {
     lastErr = e.error || "";
     if (e.error === "no-speech") { diag("Aucune voix entendue. Parle plus près du micro."); return; }
-    if (e.error === "aborted") return;
+    if (e.error === "aborted") {
+      if (!selfAbort) aborts++; selfAbort = false;
+      if (local && aborts >= 3) {            // l'écoute sur l'appareil se coupe : on passe en ligne
+        local = false; aborts = 0; note("L'écoute sur l'appareil se coupe sans arrêt. Je passe en écoute en ligne (Google).", "warn");
+        setMode("cloud", "Écoute en ligne (Google)"); rec = makeRec(); setTimeout(() => { try { rec.start(); } catch (x) {} }, 300);
+      }
+      return;
+    }
     if (e.error === "audio-capture") { note("Aucun son n'arrive du micro. Utilise « Tester le micro » après avoir arrêté.", "err"); stopAll(); return; }
     if (local && (e.error === "language-not-supported" || e.error === "service-not-allowed" || e.error === "not-allowed")) {
       local = false; note("L'écoute sur l'appareil ne marche pas ici. Je passe en écoute en ligne (Google).", "warn");
-      setMode("cloud", "Écoute en ligne (Google)"); try { r.abort(); } catch (x) {} rec = makeRec(); setTimeout(() => { try { rec.start(); } catch (x) {} }, 300); return;
+      setMode("cloud", "Écoute en ligne (Google)"); selfAbort = true; try { r.abort(); } catch (x) {} rec = makeRec(); setTimeout(() => { try { rec.start(); } catch (x) {} }, 300); return;
     }
     if (e.error === "not-allowed" || e.error === "service-not-allowed") { note("Le micro est refusé. Autorise le micro pour cette page dans Chrome (icône à gauche de l'adresse), puis réessaie.", "err"); stopAll(); return; }
     if (e.error === "network") { diag("Le réseau a coupé. Je reprends dès qu'il revient. Le texte est gardé."); return; }
@@ -410,7 +417,8 @@ function makeRec() {
     fails = Date.now() - lastStart < 3000 ? fails + 1 : 0;
     restarts++; $("restarts").textContent = restarts ? `(relancée ${restarts} fois${lastErr ? " · dernière cause : " + lastErr : ""})` : "";
     if (fails >= 6) diag("L'écoute se coupe souvent" + (lastErr ? " (" + lastErr + ")" : "") + ". Je continue de la relancer.");
-    setTimeout(() => { if (running && !paused && r === rec) { try { r.start(); } catch (e) { try { rec = makeRec(); rec.start(); } catch (x) {} } } }, Math.min(3000, 200 + fails * 300));
+    if (aborts >= 4) diag("L'écoute est coupée par autre chose : un autre onglet « Écoute », la petite fenêtre, ou une appli de dictée. Ferme-les.");
+    setTimeout(() => { if (running && !paused && r === rec) { try { r.start(); } catch (e) {} } }, Math.min(3000, 200 + fails * 300));
   };
   return r;
 }
@@ -448,7 +456,11 @@ $("mictest").addEventListener("click", async () => {
   }, 80);
 });
 
-let fails = 0, lastStart = 0, gotText = false, watchdog = null, restarts = 0, lastErr = "";
+let fails = 0, lastStart = 0, gotText = false, watchdog = null, restarts = 0, lastErr = "", aborts = 0, selfAbort = false;
+/* Une seule écoute à la fois : si un autre onglet de cette page démarre, celui-ci s'arrête. */
+let chan = null; try { chan = new BroadcastChannel("ni-ecoute"); } catch (e) {}
+const myId = Math.random().toString(36).slice(2);
+if (chan) chan.onmessage = ev => { if (ev.data && ev.data.type === "start" && ev.data.id !== myId && running) { stopAll(); note("L'écoute a été lancée dans une autre fenêtre. Elle s'est arrêtée ici pour ne pas se gêner.", "warn"); } };
 function diag(t) { const d = $("diag"); if (d) d.textContent = t; }
 async function start() {
   if (!$("accord").checked) return;
@@ -459,11 +471,12 @@ async function start() {
     note("Le micro est autorisé. Clique sur « Fenêtre flottante » pour garder le cours devant Word.", "ok");
   fails = 0;
   if (!(await chooseEngine())) return;
-  gotText = false; clearTimeout(watchdog); restarts = 0; lastErr = ""; $("restarts").textContent = "";
+  try { chan && chan.postMessage({type: "start", id: myId}); } catch (e) {}
+  aborts = 0; gotText = false; clearTimeout(watchdog); restarts = 0; lastErr = ""; $("restarts").textContent = "";
   if (local && $("engine-mode").value === "auto") watchdog = setTimeout(() => {
     if (running && !paused && !gotText && local) {
       local = false; note("Rien n'est écrit avec l'écoute sur l'appareil. Je passe en écoute en ligne (Google).", "warn");
-      setMode("cloud", "Écoute en ligne (Google)"); const old = rec; rec = makeRec(); try { old.abort(); } catch (x) {} setTimeout(() => { try { rec.start(); } catch (x) {} }, 300);
+      setMode("cloud", "Écoute en ligne (Google)"); const old = rec; rec = makeRec(); selfAbort = true; try { old.abort(); } catch (x) {} setTimeout(() => { try { rec.start(); } catch (x) {} }, 300);
     }
   }, 15000);
   rec = makeRec(); running = true; paused = false;
