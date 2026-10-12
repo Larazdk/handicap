@@ -183,7 +183,7 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
           <button class="stop" id="stop" hidden>Arrêter</button>
         </div>
       </div>
-      <p class="muted" id="diag" aria-live="polite"></p>
+      <p class="muted"><span id="diag" aria-live="polite"></span> <span id="restarts"></span></p>
       <div class="row" id="veille" hidden>
         <span class="muted">Pause de</span>
         <button data-min="5">5 min</button><button data-min="10">10 min</button><button data-min="15">15 min</button><button data-min="0">Sans limite</button>
@@ -388,6 +388,7 @@ function makeRec() {
     for (let i = e.resultIndex; i < e.results.length; i++) { const res = e.results[i]; if (res.isFinal) addFinal(res[0].transcript); else interim += res[0].transcript; }
     showInterim(interim.trim()); };
   r.onerror = e => {
+    lastErr = e.error || "";
     if (e.error === "no-speech") { diag("Aucune voix entendue. Parle plus près du micro."); return; }
     if (e.error === "aborted") return;
     if (e.error === "audio-capture") { note("Aucun son n'arrive du micro. Utilise « Tester le micro » après avoir arrêté.", "err"); stopAll(); return; }
@@ -396,8 +397,8 @@ function makeRec() {
       setMode("cloud", "Écoute en ligne (Google)"); try { r.abort(); } catch (x) {} rec = makeRec(); setTimeout(() => { try { rec.start(); } catch (x) {} }, 300); return;
     }
     if (e.error === "not-allowed" || e.error === "service-not-allowed") { note("Le micro est refusé. Autorise le micro pour cette page dans Chrome (icône à gauche de l'adresse), puis réessaie.", "err"); stopAll(); return; }
-    if (e.error === "network") { note("Le réseau a coupé. J'essaie de reprendre. Le texte déjà écrit est gardé.", "warn"); return; }
-    note("Petit souci de transcription (" + e.error + "). J'essaie de reprendre.", "warn");
+    if (e.error === "network") { diag("Le réseau a coupé. Je reprends dès qu'il revient. Le texte est gardé."); return; }
+    diag("Petit souci (" + e.error + "). Je relance l'écoute.");
   };
   r.onstart = () => { lastStart = Date.now(); diag("Micro ouvert, j'attends la voix…"); };
   r.onaudiostart = () => diag("Le son arrive au micro.");
@@ -405,9 +406,11 @@ function makeRec() {
   r.onnomatch = () => diag("J'entends, mais je ne reconnais pas les mots. Rapproche le micro.");
   r.onend = () => {
     showInterim(""); if (!running || paused || r !== rec) return;
-    fails = Date.now() - lastStart < 1500 ? fails + 1 : 0;           // s'arrête tout de suite = problème
-    if (fails >= 5) { note("L'écoute s'arrête toute seule sans arrêt. Clique sur « Arrêter », puis « Tester le micro ». Si le micro marche, recharge la page.", "err"); stopAll(); return; }
-    setTimeout(() => { if (running && !paused && r === rec) { try { r.start(); } catch (e) {} } }, 250 + fails * 400);
+    // Chrome coupe l'écoute régulièrement (silence, réseau) : on relance TOUJOURS, sans jamais arrêter le cours.
+    fails = Date.now() - lastStart < 3000 ? fails + 1 : 0;
+    restarts++; $("restarts").textContent = restarts ? `(relancée ${restarts} fois${lastErr ? " · dernière cause : " + lastErr : ""})` : "";
+    if (fails >= 6) diag("L'écoute se coupe souvent" + (lastErr ? " (" + lastErr + ")" : "") + ". Je continue de la relancer.");
+    setTimeout(() => { if (running && !paused && r === rec) { try { r.start(); } catch (e) { try { rec = makeRec(); rec.start(); } catch (x) {} } } }, Math.min(3000, 200 + fails * 300));
   };
   return r;
 }
@@ -445,7 +448,7 @@ $("mictest").addEventListener("click", async () => {
   }, 80);
 });
 
-let fails = 0, lastStart = 0, gotText = false, watchdog = null;
+let fails = 0, lastStart = 0, gotText = false, watchdog = null, restarts = 0, lastErr = "";
 function diag(t) { const d = $("diag"); if (d) d.textContent = t; }
 async function start() {
   if (!$("accord").checked) return;
@@ -456,7 +459,7 @@ async function start() {
     note("Le micro est autorisé. Clique sur « Fenêtre flottante » pour garder le cours devant Word.", "ok");
   fails = 0;
   if (!(await chooseEngine())) return;
-  gotText = false; clearTimeout(watchdog);
+  gotText = false; clearTimeout(watchdog); restarts = 0; lastErr = ""; $("restarts").textContent = "";
   if (local && $("engine-mode").value === "auto") watchdog = setTimeout(() => {
     if (running && !paused && !gotText && local) {
       local = false; note("Rien n'est écrit avec l'écoute sur l'appareil. Je passe en écoute en ligne (Google).", "warn");
