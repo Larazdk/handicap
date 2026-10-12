@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Test d'écoute · Notes Inclusives</title>
+<style>
+:root{--ink:#2C3E9E;--bg:#F4F6FA;--card:#fff;--fg:#1B2033;--muted:#4E566B;--line:#DCE1EA;--hl:#F6E05E}
+@media (prefers-color-scheme:dark){:root{--ink:#9DB0FF;--bg:#12162A;--card:#1B2038;--fg:#EDEFF7;--muted:#AEB5CB;--line:#323A5C}}
+body{margin:0;padding:20px 16px;background:var(--bg);color:var(--fg);font:18px/1.6 'Segoe UI',system-ui,sans-serif}
+.wrap{max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-size:26px}
+button{font:inherit;font-weight:700;padding:12px 20px;border-radius:12px;border:0;background:var(--ink);color:var(--card);cursor:pointer;min-height:50px}
+button.stop{background:#A3321F}
+#texte{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;min-height:200px;font-size:20px}
+#texte .i{color:var(--muted);font-style:italic}
+#log{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;font:14px/1.5 ui-monospace,Consolas,monospace;max-height:260px;overflow:auto;white-space:pre-wrap}
+.muted{color:var(--muted);font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Test d'écoute (version la plus simple)</h1>
+  <p class="muted">Cette page fait seulement une chose : écouter et écrire. Elle sert à trouver la panne. Ferme les autres onglets « Écoute » avant.</p>
+  <div><button id="go">Démarrer</button> <button id="stop" class="stop" hidden>Arrêter</button></div>
+  <div id="texte"></div>
+  <p class="muted">Journal (envoie-moi les dernières lignes si rien ne s'écrit) :</p>
+  <div id="log"></div>
+</div>
+<script>
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const $ = id => document.getElementById(id);
+const t0 = Date.now();
+function log(m) { const l = $("log"); l.textContent += `[${((Date.now() - t0) / 1000).toFixed(1)} s] ${m}\n`; l.scrollTop = l.scrollHeight; }
+let rec = null, on = false, interim = null;
+log("Navigateur : " + navigator.userAgent.replace(/.*(Chrome\/[\d.]+|Edg\/[\d.]+|Firefox\/[\d.]+).*/, "$1"));
+log(SR ? "Reconnaissance vocale : présente" : "Reconnaissance vocale : ABSENTE (utilise Chrome)");
+function make() {
+  const r = new SR(); r.lang = "fr-FR"; r.continuous = true; r.interimResults = true;
+  if ("processLocally" in r) { r.processLocally = false; log("processLocally existe → forcé à false (en ligne)"); }
+  r.onstart = () => log("start");
+  r.onaudiostart = () => log("audiostart (le son arrive)");
+  r.onspeechstart = () => log("speechstart (voix détectée)");
+  r.onspeechend = () => log("speechend");
+  r.onaudioend = () => log("audioend");
+  r.onnomatch = () => log("nomatch");
+  r.onerror = e => log("ERREUR : " + e.error + (e.message ? " – " + e.message : ""));
+  r.onresult = e => {
+    let tmp = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const x = e.results[i];
+      if (x.isFinal) { if (interim) { interim.remove(); interim = null; } const p = document.createElement("p"); p.textContent = x[0].transcript.trim(); $("texte").append(p); log("résultat final ✓"); }
+      else tmp += x[0].transcript;
+    }
+    if (tmp) { if (!interim) { interim = document.createElement("p"); interim.className = "i"; $("texte").append(interim); } interim.textContent = tmp + " …"; }
+  };
+  r.onend = () => { log("end"); if (on) setTimeout(() => { if (on) { try { r.start(); log("relance"); } catch (e) { log("relance impossible : " + e.message); } } }, 300); };
+  return r;
+}
+$("go").onclick = () => {
+  if (!SR) return;
+  on = true; rec = make();
+  try { rec.start(); log("démarrage demandé"); } catch (e) { log("démarrage impossible : " + e.message); }
+  $("go").hidden = true; $("stop").hidden = false;
+};
+$("stop").onclick = () => { on = false; try { rec.stop(); } catch (e) {} log("arrêt demandé"); $("go").hidden = false; $("stop").hidden = true; };
+</script>
+</body>
+</html>
