@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Écoute · Notes Inclusives</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2C3E9E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Une colonne : le cours (texte + questions). Les notes restent dans le logiciel de l élève (Word, OneNote) ; le cours se place dans une fenêtre à côté. */
+:root{
+  --ink:#2C3E9E; --ink-d:#1D2A6E; --hl:rgba(246,224,94,.55);
+  --bg:#F4F6FA; --card:#FFFFFF; --fg:#1B2033; --muted:#4E566B; --line:#DCE1EA; --tint:#E8ECF8;
+  --good:#1E6B34; --good-bg:#E6F4EA; --bad:#A3321F; --bad-bg:#FBE9E5; --warn:#8A5A00; --warn-bg:#FFF4D6;
+  --f-title:'Andika','Atkinson Hyperlegible',system-ui,sans-serif;
+  --f-body:'Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif;
+  --size:20px; --left:58%; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --ink:#9DB0FF; --ink-d:#C5D0FF; --hl:rgba(246,224,94,.3);
+  --bg:#12162A; --card:#1B2038; --fg:#EDEFF7; --muted:#AEB5CB; --line:#323A5C; --tint:#252C4D;
+  --good:#7FD69A; --good-bg:#16351F; --bad:#FF9C88; --bad-bg:#3D1C16; --warn:#F3C969; --warn-bg:#3A2E10;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.5;padding:16px 16px 24px}
+p{margin:0}
+h1{font-family:var(--f-title);font-size:26px;margin:0;width:fit-content;background-image:linear-gradient(transparent 62%,var(--hl) 62%);padding:0 4px;margin-left:-4px}
+h2{font-family:var(--f-title);font-size:19px;margin:0}
+.muted{color:var(--muted);font-size:15px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+label{font-weight:700}
+input[type=text],input[type=password],select,textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
+input[type=text],input[type=password]{flex:1 1 200px;min-width:0}
+input[type=checkbox]{width:24px;height:24px;accent-color:var(--ink)}
+button{font:inherit;font-weight:700;border-radius:12px;padding:8px 14px;min-height:46px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button.primary{background:var(--ink);border-color:var(--ink);color:var(--card)}
+button.stop{background:var(--bad-bg);border-color:var(--bad)}
+button.ask{background:var(--hl);border-color:var(--warn)}
+button.on{background:var(--tint);border-color:var(--ink);color:var(--ink-d)}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;padding:6px 12px;border-radius:999px;background:var(--tint)}
+.chip.local{background:var(--good-bg);color:var(--good)}
+.chip.cloud{background:var(--warn-bg);color:var(--warn)}
+.chip.off{background:var(--bad-bg);color:var(--bad)}
+.dot{width:10px;height:10px;border-radius:50%;background:currentColor}
+.live .dot{animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live .dot{animation:none}}
+.msg{border-radius:10px;padding:10px 14px;font-size:15px}
+.msg.warn{background:var(--warn-bg)} .msg.err{background:var(--bad-bg)} .msg.ok{background:var(--good-bg)}
+
+.top{display:flex;flex-direction:column;gap:12px;max-width:900px;margin:0 auto 12px}
+body.compact .top > p, body.compact #place, body.compact #reprise{display:none}
+body.compact #texte{height:55vh}
+.main{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.main.solo{grid-template-columns:minmax(0,1fr)}
+.main.solo #split,.main.solo #notes-col{display:none}
+#split{cursor:col-resize;display:flex;align-items:center;justify-content:center;touch-action:none}
+#split::after{content:"";width:4px;height:60px;border-radius:4px;background:var(--line)}
+#split:hover::after,#split:focus-visible::after{background:var(--ink)}
+@media (max-width:820px){.main{grid-template-columns:minmax(0,1fr)} #split{display:none} #notes-col{margin-top:12px}}
+
+/* Le panneau du cours (peut être déplacé dans la fenêtre flottante) */
+#live{display:flex;flex-direction:column;gap:10px;min-width:0;height:100%}
+.livebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.state{font-family:var(--f-title);font-size:18px;font-variant-numeric:tabular-nums}
+#texte{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:var(--size);line-height:1.7;min-height:220px;height:46vh;overflow-y:auto;resize:vertical}
+.pip #texte{height:auto;flex:1 1 auto;min-height:120px;resize:none}
+.seg{display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:8px;padding:3px 4px;border-radius:6px;cursor:pointer}
+.seg:hover{background:var(--tint)}
+.seg time{color:var(--muted);font-size:.68em;padding-top:.35em;font-variant-numeric:tabular-nums}
+.seg.flash{background:var(--hl)}
+.seg.sel{background:var(--hl);outline:2px solid var(--warn)}
+.tag{font-size:.62em;font-weight:700;padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:6px}
+.tag.imp{background:var(--hl)} .tag.dif{background:var(--bad-bg);color:var(--bad)} .tag.q{background:var(--tint);color:var(--ink-d)}
+.interim{color:var(--muted);font-style:italic}
+.empty{color:var(--muted);font-size:17px}
+.marks{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px}
+@media (max-width:520px){.marks{grid-template-columns:1fr 1fr}}
+.pip .marks{grid-template-columns:1fr 1fr}
+
+/* Questions */
+#qpanel{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:44vh;overflow-y:auto}
+.pip #qpanel{max-height:50vh}
+.quote{font-size:15px;padding:8px 10px;border-radius:8px;background:var(--hl);max-height:6.5em;overflow:auto}
+.answer{font-size:calc(var(--size) - 2px);line-height:1.6;white-space:pre-wrap}
+.answer .who{display:block;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:6px}
+.followups{display:flex;flex-wrap:wrap;gap:6px}
+.followups button{min-height:40px;padding:6px 12px;font-size:15px}
+#qhist{display:flex;flex-direction:column;gap:6px}
+#qhist details{border-top:1px solid var(--line);padding-top:6px}
+#qhist summary{cursor:pointer;font-weight:700}
+
+/* Notes */
+#notes-col{display:flex;flex-direction:column;gap:8px;min-width:0}
+#notes{flex:1 1 auto;min-height:46vh;width:100%;resize:vertical;font-size:var(--size);line-height:1.7}
+.pipnote{display:none}
+.main.inpip .pipnote{display:block}
+details.settings summary{cursor:pointer;font-weight:700}
+h3{font-family:var(--f-title);font-size:17px;margin:6px 0 0}
+.stack{display:flex;flex-direction:column;gap:8px}
+#fin{border:2px solid var(--ink)}
+#selbar{position:fixed;z-index:50;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:var(--card);border:2px solid var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25);width:min(420px,calc(100vw - 16px))}
+#selbar input{flex:1 1 auto;min-width:0;min-height:42px}
+#selbar button{min-height:40px;padding:6px 12px;font-size:15px}
+#selbar button.go{background:var(--ink);border-color:var(--ink);color:var(--card)}
+#selbar .selq{font-size:14px;padding:4px 8px;border-radius:6px;background:var(--hl);max-height:3.2em;overflow:hidden}
+.step{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.rev{display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:8px;align-items:start;text-align:left;font-weight:400;min-height:0;padding:8px 10px}
+#fin-corr{max-height:40vh;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:6px}
+.corr{display:grid;grid-template-columns:3.4em minmax(0,1fr) auto;gap:8px;align-items:center;padding:4px 2px;border-bottom:1px solid var(--line)}
+.corr:last-child{border-bottom:0}
+.corr button{min-height:38px;padding:4px 10px;font-size:14px}
+.corr .orig{display:block;font-size:13px;color:var(--muted)}
+.tag.fix{background:var(--good-bg);color:var(--good)}
+.out{white-space:pre-wrap;line-height:1.65;padding:12px;border-radius:10px;background:var(--tint)}
+a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;padding:8px 14px;min-height:46px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="row" style="justify-content:space-between">
+    <h1>Écoute</h1>
+    <div class="row">
+      <span class="chip" id="mode"><span class="dot"></span><span id="mode-t">Vérification…</span></span>
+      <span class="chip" id="ia-chip">Réponses : …</span>
+    </div>
+  </div>
+  <p class="muted">Pose cet appareil près du prof. Le cours s'écrit en direct. <b>Le son n'est jamais enregistré</b> : seul le texte est gardé, sur cet appareil.</p>
+  <div id="reprise" class="msg warn" hidden></div>
+
+  <section class="card" id="prep">
+    <div class="row">
+      <label for="matiere">Cours</label>
+      <input type="text" id="matiere" placeholder="Par exemple : Droit civil">
+      <label for="duree">Arrêt auto.</label>
+      <select id="duree"><option value="60">1 h</option><option value="90">1 h 30</option><option value="120" selected>2 h</option><option value="180">3 h</option></select>
+    </div>
+    <div class="row"><input type="checkbox" id="accord"><label for="accord">Le prof a donné son accord pour ce cours</label></div>
+    <div class="row">
+      <button id="mictest">Tester le micro</button>
+      <div class="bar" style="flex:1 1 160px;height:14px;border-radius:999px;background:var(--line);overflow:hidden"><i id="miclevel" style="display:block;height:100%;width:0;background:var(--good)"></i></div>
+    </div>
+    <p class="muted" id="micinfo">Clique sur « Tester le micro » et parle : la barre verte doit bouger.</p>
+  </section>
+
+  <div class="card" id="place">
+    <p><b>Tes notes restent dans ton logiciel</b> (Word, OneNote, Google Docs…). Mets le cours dans une petite fenêtre à côté :</p>
+    <div class="row">
+      <button class="primary" id="pip-btn">Fenêtre flottante (reste au-dessus de Word)</button>
+      <button id="popup-btn">Petite fenêtre à placer à côté</button>
+    </div>
+    <div class="row" id="auto-pip-row"><input type="checkbox" id="auto-pip" checked><label for="auto-pip">Toujours devant : le cours passe en fenêtre flottante quand je démarre</label></div>
+    <p class="muted" id="pip-help">La fenêtre flottante reste devant toutes les autres fenêtres (Word, OneNote, le navigateur…). Tu peux la déplacer et l'agrandir.</p>
+    <p class="muted" id="pip-none" hidden>Ton navigateur ne propose pas la fenêtre flottante. Mets Chrome à jour (menu ⋮ → Aide → À propos de Google Chrome). Sinon, installe <b>Microsoft PowerToys</b> (gratuit) : avec <b>Windows + Ctrl + T</b>, n'importe quelle fenêtre reste devant.</p>
+  </div>
+  <div id="note" class="msg" hidden></div>
+</div>
+
+<div class="main" id="main">
+  <div id="live-home">
+    <section id="live">
+      <div class="livebar">
+        <span class="state" id="etat">Prêt</span>
+        <div class="row">
+          <button class="primary" id="go" disabled>Autoriser et démarrer</button>
+          <button id="pause" hidden>Pause</button>
+          <button class="stop" id="stop" hidden>Arrêter</button>
+        </div>
+      </div>
+      <div class="row" id="veille" hidden>
+        <span class="muted">Pause de</span>
+        <button data-min="5">5 min</button><button data-min="10">10 min</button><button data-min="15">15 min</button><button data-min="0">Sans limite</button>
+      </div>
+
+      <div id="selbar" hidden role="dialog" aria-label="Question sur le texte surligné">
+        <p class="selq" id="sel-quote"></p>
+        <div class="row" style="flex-wrap:nowrap">
+          <input type="text" id="sel-q" placeholder="Ta question… puis Entrée" autocomplete="off">
+          <button class="go" id="sel-ask">Demander</button>
+        </div>
+        <div class="row">
+          <button id="sel-simple">Expliquer simplement</button>
+          <button id="sel-word">C'est quoi ce mot ?</button>
+          <button id="sel-x" aria-label="Fermer">✕</button>
+        </div>
+      </div>
+      <div id="texte" aria-label="Le texte du cours"><p class="empty">Le texte du cours apparaîtra ici. Surligne des mots pour poser une question à l'IA.</p></div>
+
+      <div class="marks">
+        <button class="ask" id="nc">Je ne comprends pas</button>
+        <button id="rate">J'ai raté</button>
+        <button id="imp">Important</button>
+        <button id="dif">Difficile</button>
+      </div>
+
+      <section id="qpanel" hidden aria-live="polite">
+        <div class="row" style="justify-content:space-between"><h2>Ma question</h2><button id="qclose" aria-label="Fermer la question">Fermer</button></div>
+        <p class="quote" id="qquote"></p>
+        <div class="row">
+          <input type="text" id="qtext" placeholder="Ta question (facultatif). Par exemple : c'est quoi ce mot ?">
+          <button class="primary" id="qsend">Demander</button>
+        </div>
+        <div id="qthread"></div>
+        <div class="followups" id="qfollow" hidden>
+          <button data-f="detail">Détailler</button>
+          <button data-f="exemple">Donner un exemple</button>
+          <button data-f="autrement">Expliquer autrement</button>
+          <button data-f="copie">Copier la réponse</button>
+          <button data-f="compris" class="primary">J'ai compris</button>
+        </div>
+        <p class="muted" id="qstatus"></p>
+      </section>
+
+      <div class="row">
+        <button id="moins" aria-label="Texte plus petit">A−</button>
+        <button id="plus" aria-label="Texte plus grand">A+</button>
+        <span class="muted" id="compteur">0 mot</span>
+        <span class="muted" id="info"></span>
+      </div>
+    </section>
+    <p class="msg ok pipnote">Le cours est dans la fenêtre flottante. Ferme-la pour le remettre ici.</p>
+  </div>
+
+  <section class="card" id="fin" hidden aria-labelledby="fin-t">
+    <div class="row" style="justify-content:space-between"><h2 id="fin-t">Fin du cours</h2><button id="fin-close">Fermer</button></div>
+    <p id="fin-resume"></p>
+    <div class="step">
+      <h3>1. À revoir</h3>
+      <p class="muted">Ce que tu as marqué pendant le cours. Clique pour retrouver le passage.</p>
+      <div id="fin-revoir" class="stack"></div>
+    </div>
+    <div class="step">
+      <h3>2. Corriger les mots mal entendus</h3>
+      <p class="muted">Si l'outil a mal compris un mot, corrige la phrase. L'original est toujours gardé.</p>
+      <div id="fin-corr"></div>
+    </div>
+    <div class="step">
+      <h3>3. Mettre le cours au propre (à ta demande)</h3>
+      <div class="row">
+        <button data-make="structure">Cours organisé en parties</button>
+        <button data-make="synthese">Synthèse courte</button>
+        <button data-make="lexique">Mots difficiles expliqués</button>
+      </div>
+      <p class="muted" id="fin-status"></p>
+      <div id="fin-out" class="stack"></div>
+    </div>
+    <div class="step">
+      <h3>4. Emporter le cours</h3>
+      <div class="row">
+        <button class="primary" id="fin-word">Ouvrir dans Word (.doc)</button>
+        <button id="fin-copy">Copier tout</button>
+        <a class="btn" id="fin-atelier" href="https://claude.ai/artifact/QDWtXaJZggUnrDoufkrVRy" target="_blank" rel="noopener">Réviser dans l'Atelier</a>
+      </div>
+      <p class="muted">« Réviser dans l'Atelier » copie le cours, puis ouvre l'Atelier : colle-le dans la case « Le cours ».</p>
+    </div>
+  </section>
+
+  <section class="card" id="extras">
+    <div class="row">
+      <button class="primary" id="fin-open">Fin du cours</button>
+      <button id="copier">Copier tout le cours</button>
+      <button id="telecharger">Télécharger (.txt)</button>
+      <button id="effacer">Effacer le cours</button>
+    </div>
+    <div id="qhist-box" hidden><h2>Mes questions de ce cours</h2><div id="qhist"></div></div>
+    <details class="settings">
+      <summary>Réglages des réponses</summary>
+      <p class="muted">Les réponses viennent, dans cet ordre : de l'IA intégrée à Chrome si ton ordinateur la permet (rien ne sort), sinon de Claude avec une clé, sinon d'un bouton qui prépare ta question pour Claude. Seuls le passage et ta question sont envoyés, jamais tes besoins ni ton profil.</p>
+      <div class="row"><label for="key">Clé Claude (facultatif)</label><input type="password" id="key" placeholder="sk-ant-…" autocomplete="off"><button id="keysave">Enregistrer</button></div>
+      <p class="muted">La clé reste sur cet appareil. Pour un test seulement.</p>
+    </details>
+  </section>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id) || (pipWin ? pipWin.document.getElementById(id) : null);
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const LANG = "fr-FR";
+const KEY = "ni-ecoute-v2";
+const MODEL = "claude-haiku-4-5-20251001";
+
+let rec = null, running = false, paused = false, local = false;
+let t0 = 0, pausedMs = 0, pauseStart = 0, resumeTimer = null, stopTimer = null, tick = null, wake = null;
+let segs = [];          // {t, text, imp, dif, q}
+let questions = [];     // {t, passage, turns:[{role, content}], compris}
+let interimEl = null, selIdx = null, pipWin = null;
+let outputs = {};       // versions créées par l'IA, à côté de l'original
+
+/* ---------- Petits outils ---------- */
+const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); const m = Math.floor(s / 60); const h = Math.floor(m / 60);
+  return h ? `${h}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`; };
+const elapsed = () => (running ? Date.now() - t0 - pausedMs - (paused ? Date.now() - pauseStart : 0) : (segs.length ? segs[segs.length - 1].t : 0));
+const mk = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+function setMode(kind, text) { const m = $("mode"); m.className = "chip " + kind + (running && !paused ? " live" : ""); $("mode-t").textContent = text; }
+function note(text, kind) { const n = $("note"); if (!text) { n.hidden = true; return; } n.className = "msg " + (kind || "warn"); n.textContent = text; n.hidden = false; }
+const words = () => segs.reduce((n, s) => n + s.text.split(/\s+/).filter(Boolean).length, 0);
+function updateCount() { const w = words(); $("compteur").textContent = `${w} mot${w > 1 ? "s" : ""}`; }
+function info(t) { $("info").textContent = t; }
+
+/* ---------- Le texte du cours ---------- */
+function segEl(s, i) {
+  const d = mk("div", "seg" + (i === selIdx ? " sel" : "")); d.dataset.i = i;
+  const p = mk("p", "", s.fix || s.text);
+  if (s.fix) p.append(mk("span", "tag fix", "Corrigé"));
+  if (s.imp) p.append(mk("span", "tag imp", "Important"));
+  if (s.dif) p.append(mk("span", "tag dif", "Difficile"));
+  if (s.q) p.append(mk("span", "tag q", "Question"));
+  d.append(mk("time", "", fmt(s.t)), p); return d;
+}
+function renderAll() {
+  const box = $("texte"); box.replaceChildren();
+  if (!segs.length) box.append(mk("p", "empty", "Le texte du cours apparaîtra ici. Clique sur une phrase pour la choisir, ou surligne des mots."));
+  segs.forEach((s, i) => box.append(segEl(s, i)));
+  interimEl = null; updateCount();
+}
+const nearBottom = () => { const b = $("texte"); return b.scrollHeight - b.scrollTop - b.clientHeight < 80; };
+function addFinal(text) {
+  text = text.trim(); if (!text) return;
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+  const stick = nearBottom(); const s = {t: elapsed(), text}; segs.push(s);
+  const box = $("texte"); const e = box.querySelector(".empty"); if (e) e.remove();
+  if (interimEl) { interimEl.remove(); interimEl = null; }
+  box.append(segEl(s, segs.length - 1));
+  if (stick) box.scrollTop = box.scrollHeight;
+  updateCount(); save();
+}
+function showInterim(text) {
+  const box = $("texte"); const stick = nearBottom();
+  if (!text) { if (interimEl) { interimEl.remove(); interimEl = null; } return; }
+  if (!interimEl) { interimEl = mk("p", "interim"); box.append(interimEl); }
+  interimEl.textContent = text + " …";
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+$("texte").addEventListener("click", e => {
+  const win = pipWin || window; const sel = win.getSelection && win.getSelection();
+  if (sel && String(sel).trim()) return;               // l'élève surligne : on garde sa sélection
+  const d = e.target.closest(".seg"); if (!d) return;
+  const i = Number(d.dataset.i); selIdx = selIdx === i ? null : i;
+  $("texte").querySelectorAll(".seg.sel").forEach(x => x.classList.remove("sel"));
+  if (selIdx !== null) { d.classList.add("sel"); info("Phrase choisie. Appuie sur « Je ne comprends pas » pour poser ta question."); } else info("");
+});
+
+/* ---------- Sauvegarde locale (texte seulement) ---------- */
+function save() { try { localStorage.setItem(KEY, JSON.stringify({matiere: $("matiere").value, segs, questions, outputs})); } catch (e) {} }
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || localStorage.getItem("ni-ecoute-v1") || "null"); } catch (e) { return null; } }
+
+/* ---------- Transcription ---------- */
+async function chooseEngine() {
+  if (!SR) { setMode("off", "Non disponible"); note("Ce navigateur ne sait pas transcrire. Ouvre cette page dans Google Chrome ou Microsoft Edge.", "err"); return false; }
+  local = false;
+  if (typeof SR.available === "function") {
+    try {
+      const st = await SR.available({langs: [LANG], processLocally: true, quality: "dictation"});
+      if (st === "available") local = true;
+      else if (st === "downloadable" || st === "downloading") {
+        setMode("cloud", "Téléchargement du français…");
+        try { local = !!(await SR.install({langs: [LANG], processLocally: true, quality: "dictation"})); } catch (e) { local = false; }
+      }
+    } catch (e) { local = false; }
+  }
+  if (local) { setMode("local", "Écoute sur l'appareil"); note(""); }
+  else { setMode("cloud", "Écoute en ligne (Google)"); note("Le son passe par Google pour être changé en texte. Notes Inclusives ne le garde pas. À utiliser pour un test, avec l'accord du prof.", "warn"); }
+  return true;
+}
+function makeRec() {
+  const r = new SR(); r.lang = LANG; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+  if ("processLocally" in r) r.processLocally = local;
+  r.onresult = e => { let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) { const res = e.results[i]; if (res.isFinal) addFinal(res[0].transcript); else interim += res[0].transcript; }
+    showInterim(interim.trim()); };
+  r.onerror = e => {
+    if (e.error === "no-speech" || e.error === "aborted") return;
+    if (e.error === "audio-capture") { note("Aucun son n'arrive du micro. Utilise « Tester le micro » après avoir arrêté.", "err"); stopAll(); return; }
+    if (local && (e.error === "language-not-supported" || e.error === "service-not-allowed" || e.error === "not-allowed")) {
+      local = false; note("L'écoute sur l'appareil ne marche pas ici. Je passe en écoute en ligne (Google).", "warn");
+      setMode("cloud", "Écoute en ligne (Google)"); try { r.abort(); } catch (x) {} rec = makeRec(); setTimeout(() => { try { rec.start(); } catch (x) {} }, 300); return;
+    }
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") { note("Le micro est refusé. Autorise le micro pour cette page dans Chrome (icône à gauche de l'adresse), puis réessaie.", "err"); stopAll(); return; }
+    if (e.error === "network") { note("Le réseau a coupé. J'essaie de reprendre. Le texte déjà écrit est gardé.", "warn"); return; }
+    note("Petit souci de transcription (" + e.error + "). J'essaie de reprendre.", "warn");
+  };
+  r.onstart = () => { lastStart = Date.now(); };
+  r.onend = () => {
+    showInterim(""); if (!running || paused || r !== rec) return;
+    fails = Date.now() - lastStart < 1500 ? fails + 1 : 0;           // s'arrête tout de suite = problème
+    if (fails >= 5) { note("L'écoute s'arrête toute seule sans arrêt. Clique sur « Arrêter », puis « Tester le micro ». Si le micro marche, recharge la page.", "err"); stopAll(); return; }
+    setTimeout(() => { if (running && !paused && r === rec) { try { r.start(); } catch (e) {} } }, 250 + fails * 400);
+  };
+  return r;
+}
+async function micState() { try { return (await navigator.permissions.query({name: "microphone"})).state; } catch (e) { return "unknown"; } }
+async function askMic() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
+  try { const st = await navigator.mediaDevices.getUserMedia({audio: true}); st.getTracks().forEach(t => t.stop()); return true; }
+  catch (e) { micError(e && e.name); return false; }
+}
+function micError(name) {
+  const m = {
+    NotAllowedError: "Le micro est bloqué. Clique sur l'icône à gauche de l'adresse, mets « Micro » sur « Autoriser », puis recharge la page. Vérifie aussi Windows : Paramètres → Confidentialité → Microphone → autoriser les applications de bureau.",
+    NotFoundError: "Aucun micro trouvé. Vérifie qu'il est branché, ou que le micro de l'ordinateur n'est pas coupé (touche avec un micro barré sur le clavier ASUS).",
+    NotReadableError: "Le micro est déjà utilisé par une autre application (Teams, Zoom, Discord…). Ferme-la, puis réessaie."
+  };
+  note(m[name] || "Le micro ne répond pas (" + (name || "erreur inconnue") + "). Recharge la page et réessaie.", "err");
+}
+let micTimer = null;
+$("mictest").addEventListener("click", async () => {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("micinfo").textContent = "Ce navigateur ne permet pas de tester le micro."; return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); } catch (e) { micError(e && e.name); $("micinfo").textContent = "Le test n'a pas marché : lis le message en haut."; return; }
+  const tr = stream.getAudioTracks()[0];
+  $("micinfo").textContent = "Micro utilisé : " + (tr && tr.label ? tr.label : "micro par défaut") + ". Parle pendant 8 secondes…";
+  const ctx = new (window.AudioContext || window.webkitAudioContext)(); const an = ctx.createAnalyser(); an.fftSize = 512;
+  ctx.createMediaStreamSource(stream).connect(an); const data = new Uint8Array(an.fftSize); let max = 0;
+  clearInterval(micTimer); const t0m = Date.now();
+  micTimer = setInterval(() => {
+    an.getByteTimeDomainData(data); let peak = 0; for (const v of data) peak = Math.max(peak, Math.abs(v - 128));
+    const lvl = Math.min(100, peak / 64 * 100); max = Math.max(max, lvl); $("miclevel").style.width = lvl + "%";
+    if (Date.now() - t0m > 8000) {
+      clearInterval(micTimer); stream.getTracks().forEach(t => t.stop()); ctx.close(); $("miclevel").style.width = "0";
+      $("micinfo").textContent = max > 12 ? "Le micro marche. Tu peux démarrer." : "Presque rien n'a été entendu. Parle plus fort, rapproche-toi, ou choisis un autre micro dans Windows (Paramètres → Son → Entrée).";
+    }
+  }, 80);
+});
+
+let fails = 0, lastStart = 0;
+async function start() {
+  if (!$("accord").checked) return;
+  const before = await micState();
+  if (before === "granted" && $("auto-pip").checked && !pipWin && "documentPictureInPicture" in window) await openPip();   // pendant le clic
+  if (!(await askMic())) return;
+  if (before !== "granted" && $("auto-pip").checked && !pipWin && "documentPictureInPicture" in window)
+    note("Le micro est autorisé. Clique sur « Fenêtre flottante » pour garder le cours devant Word.", "ok");
+  fails = 0;
+  if (!(await chooseEngine())) return;
+  rec = makeRec(); running = true; paused = false;
+  t0 = Date.now() - (segs.length ? segs[segs.length - 1].t : 0); pausedMs = 0;
+  try { rec.start(); } catch (e) {}
+  $("go").hidden = true; $("pause").hidden = false; $("stop").hidden = false; $("prep").hidden = true;
+  setMode(local ? "local" : "cloud", local ? "Écoute sur l'appareil" : "Écoute en ligne (Google)");
+  clearTimeout(stopTimer); stopTimer = setTimeout(() => { stopAll(); note("Arrêt automatique : la durée prévue est passée. Le texte est gardé.", "ok"); }, Number($("duree").value) * 60000);
+  tick = setInterval(() => { $("etat").textContent = paused ? "En pause" : "J'écoute · " + fmt(elapsed()); }, 500);
+  try { if ("wakeLock" in navigator) wake = await navigator.wakeLock.request("screen"); } catch (e) {}
+}
+function pause(min) {
+  if (!running || paused) return;
+  paused = true; pauseStart = Date.now(); try { rec.stop(); } catch (e) {}
+  $("pause").textContent = "Reprendre"; $("veille").hidden = true; $("mode").classList.remove("live");
+  clearTimeout(resumeTimer);
+  if (min > 0) { resumeTimer = setTimeout(resume, min * 60000); note(`Pause de ${min} minutes. L'écoute reprendra toute seule.`, "ok"); }
+  else note("Pause. Appuie sur « Reprendre » quand le cours recommence.", "ok");
+}
+function resume() {
+  if (!running || !paused) return;
+  pausedMs += Date.now() - pauseStart; paused = false; clearTimeout(resumeTimer);
+  try { rec.start(); } catch (e) {}
+  $("pause").textContent = "Pause"; note(""); $("mode").classList.add("live");
+  try { navigator.vibrate && navigator.vibrate(200); } catch (e) {}
+}
+function stopAll() {
+  running = false; paused = false; clearTimeout(resumeTimer); clearTimeout(stopTimer); clearInterval(tick);
+  try { rec && rec.stop(); } catch (e) {} showInterim("");
+  $("go").hidden = false; $("go").textContent = "Reprendre l'écoute"; $("pause").hidden = true; $("stop").hidden = true; $("veille").hidden = true; $("prep").hidden = false;
+  $("pause").textContent = "Pause"; $("etat").textContent = segs.length ? "Arrêté · texte gardé" : "Prêt"; $("mode").classList.remove("live");
+  try { wake && wake.release(); } catch (e) {} wake = null; save();
+  if (segs.length) openFin();
+}
+$("accord").addEventListener("change", () => { $("go").disabled = !$("accord").checked; });
+$("go").addEventListener("click", start);
+$("pause").addEventListener("click", () => { if (paused) resume(); else $("veille").hidden = !$("veille").hidden; });
+$("veille").addEventListener("click", e => { const b = e.target.closest("button[data-min]"); if (b) pause(Number(b.dataset.min)); });
+$("stop").addEventListener("click", stopAll);
+$("matiere").addEventListener("input", save);
+
+/* ---------- Marques ---------- */
+function markLast(kind) {
+  if (!segs.length) { info("Rien à marquer pour l'instant."); return; }
+  const i = selIdx !== null ? selIdx : segs.length - 1; segs[i][kind] = true; save(); renderAll();
+  info(kind === "imp" ? "Passage marqué « Important »." : "Passage marqué « Difficile ».");
+}
+$("imp").addEventListener("click", () => markLast("imp"));
+$("dif").addEventListener("click", () => markLast("dif"));
+$("rate").addEventListener("click", () => {
+  const from = elapsed() - 30000; const box = $("texte"); let first = null;
+  box.querySelectorAll(".seg").forEach(d => { const i = Number(d.dataset.i); const hit = running ? segs[i].t >= from : i >= segs.length - 3;
+    d.classList.toggle("flash", hit); if (hit && !first) first = d; });
+  if (first) first.scrollIntoView({block: "start", behavior: "smooth"});
+  info(first ? "Voici les 30 dernières secondes, surlignées." : "Rien d'écrit dans les 30 dernières secondes.");
+  setTimeout(() => box.querySelectorAll(".seg.flash").forEach(d => d.classList.remove("flash")), 12000);
+});
+
+/* ---------- Questions : « Je ne comprends pas » ---------- */
+let cur = null;   // question en cours
+function pickPassage() {
+  const win = pipWin || window; const sel = win.getSelection && win.getSelection();
+  const s = sel ? String(sel).trim() : "";
+  if (s && $("texte").contains(sel.anchorNode)) return {text: s, idx: Number((sel.anchorNode.parentElement.closest(".seg") || {dataset: {i: segs.length - 1}}).dataset.i)};
+  if (selIdx !== null && segs[selIdx]) return {text: segs[selIdx].text, idx: selIdx};
+  if (!segs.length) return null;
+  const last = segs.slice(-2); return {text: last.map(x => x.text).join(" "), idx: segs.length - 1};
+}
+function context(idx) { return segs.slice(Math.max(0, idx - 8), idx + 1).map(s => s.text).join(" ").slice(-1800); }
+function openQuestion(p) {
+  if (!p) { info("Il n'y a pas encore de texte. Attends que le prof parle."); return; }
+  if (cur && cur.turns.length) finishQuestion();
+  cur = {t: elapsed(), idx: p.idx, passage: p.text, ctx: context(p.idx), turns: [], compris: false};
+  if (segs[p.idx]) { segs[p.idx].q = true; renderAll(); }
+  $("qquote").textContent = "« " + p.text + " »";
+  $("qtext").value = ""; $("qthread").replaceChildren(); $("qfollow").hidden = true; $("qstatus").textContent = "";
+  $("qpanel").hidden = false; $("qtext").focus();
+  $("qpanel").scrollIntoView({block: "nearest"});
+}
+$("nc").addEventListener("click", () => openQuestion(pickPassage()));
+
+/* Bulle qui apparaît toute seule quand on surligne du texte */
+let selPassage = null, selTimer = null, mouseDown = false;
+const selWin = () => $("texte").ownerDocument.defaultView;
+const bubbleBusy = () => { const bar = $("selbar"); return !bar.hidden && bar.contains(bar.ownerDocument.activeElement); };
+function hideSelbar() { $("selbar").hidden = true; selPassage = null; }
+function checkSelection() {
+  const w = selWin(); const sel = w.getSelection(); const t = sel ? String(sel).trim() : "";
+  if (!t || !sel.rangeCount || !$("texte").contains(sel.anchorNode)) { if (!bubbleBusy()) hideSelbar(); return; }
+  const node = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
+  const seg = node && node.closest(".seg");
+  selPassage = {text: t.slice(0, 600), idx: seg ? Number(seg.dataset.i) : segs.length - 1};
+  $("sel-quote").textContent = "« " + selPassage.text + " »";
+  $("sel-word").hidden = t.split(/\s+/).length > 3;
+  $("sel-q").value = "";
+  const rect = sel.getRangeAt(0).getBoundingClientRect(); const bar = $("selbar"); bar.hidden = false;
+  const vw = w.innerWidth, vh = w.innerHeight, bw = bar.offsetWidth, bh = bar.offsetHeight;
+  let top = rect.bottom + 8; if (top + bh > vh - 8) top = Math.max(8, rect.top - bh - 8);
+  bar.style.top = top + "px"; bar.style.left = Math.min(Math.max(8, rect.left), vw - bw - 8) + "px";
+  $("sel-q").focus({preventScroll: true});   // on peut écrire tout de suite, sans cliquer
+}
+function bindSelection(doc) {
+  doc.addEventListener("mousedown", e => { mouseDown = true; if (!$("selbar").contains(e.target) && !$("texte").contains(e.target)) hideSelbar(); });
+  doc.addEventListener("mouseup", () => { mouseDown = false; clearTimeout(selTimer); selTimer = setTimeout(checkSelection, 30); });
+  doc.addEventListener("touchend", () => { clearTimeout(selTimer); selTimer = setTimeout(checkSelection, 300); });
+  doc.addEventListener("selectionchange", () => { if (mouseDown) return; clearTimeout(selTimer); selTimer = setTimeout(checkSelection, 450); });
+  doc.addEventListener("keydown", e => { if (e.key === "Escape") hideSelbar(); });
+}
+bindSelection(document);
+$("selbar").addEventListener("mousedown", e => { if (e.target.tagName !== "INPUT") e.preventDefault(); });
+function fromSel(question) {
+  const p = selPassage; if (!p) return;
+  hideSelbar(); try { selWin().getSelection().removeAllRanges(); } catch (e) {}
+  openQuestion(p);
+  cur.question = question || "Je ne comprends pas ce passage.";
+  addBubble("user", cur.question); ask(firstPrompt(cur));
+}
+$("sel-ask").addEventListener("click", () => fromSel($("sel-q").value.trim()));
+$("sel-q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); fromSel($("sel-q").value.trim()); } });
+$("sel-simple").addEventListener("click", () => fromSel("Explique-moi simplement ce passage."));
+$("sel-word").addEventListener("click", () => fromSel(`C'est quoi « ${selPassage ? selPassage.text : ""} » ?`));
+$("sel-x").addEventListener("click", hideSelbar);
+$("qclose").addEventListener("click", () => { $("qpanel").hidden = true; finishQuestion(); });
+$("qtext").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("qsend").click(); } });
+
+const RULES = "Tu aides un élève pendant un cours, en direct. Il ne doit pas perdre le fil. Réponds en français, avec des mots simples et des phrases courtes. Commence par l'essentiel. Appuie-toi sur le passage du cours. Si le passage contient sans doute une erreur de transcription, dis-le en une phrase. N'invente pas ce que le prof a dit.";
+const FOLLOW = {
+  detail: "Détaille un peu plus, en 5 à 7 phrases courtes.",
+  exemple: "Donne un exemple concret et simple, en 2 à 4 phrases.",
+  autrement: "Explique autrement, avec une comparaison de la vie de tous les jours, en 2 à 4 phrases."
+};
+function firstPrompt(q) {
+  return `Extrait du cours (transcription automatique, peut contenir des erreurs) :\n"""${q.ctx}"""\n\nPassage que l'élève ne comprend pas :\n"""${q.passage}"""\n\nSa question : ${q.question || "Je ne comprends pas ce passage."}\n\nRéponds en 2 à 4 phrases courtes, pas plus.`;
+}
+function addBubble(role, text) {
+  const d = mk("p", "answer"); d.append(mk("span", "who", role === "user" ? "Toi" : "Réponse"));
+  const body = mk("span", "", text); d.append(body); $("qthread").append(d);
+  $("qpanel").scrollTop = $("qpanel").scrollHeight; return body;
+}
+
+/* Trois moteurs de réponse, dans l'ordre */
+let engine = "copy", lmAvail = "unavailable";
+const LM_OPTS = {expectedInputs: [{type: "text", languages: ["fr"]}], expectedOutputs: [{type: "text", languages: ["fr"]}]};
+const getKey = () => { try { return localStorage.getItem("ni-cle") || ""; } catch (e) { return ""; } };
+async function detectEngine() {
+  lmAvail = "unavailable";
+  try { if (typeof LanguageModel !== "undefined") lmAvail = await LanguageModel.availability(LM_OPTS); } catch (e) { lmAvail = "unavailable"; }
+  if (lmAvail === "available" || lmAvail === "downloadable" || lmAvail === "downloading") engine = "builtin";
+  else if (getKey()) engine = "api"; else engine = "copy";
+  const c = $("ia-chip");
+  if (engine === "builtin") { c.className = "chip local"; c.textContent = lmAvail === "available" ? "Réponses : sur l'appareil" : "Réponses : à télécharger"; }
+  else if (engine === "api") { c.className = "chip cloud"; c.textContent = "Réponses : Claude (clé)"; }
+  else { c.className = "chip"; c.textContent = "Réponses : via Claude.ai"; }
+}
+async function askBuiltin(turns, onText, sys = RULES) {
+  const s = await LanguageModel.create({...LM_OPTS, initialPrompts: [{role: "system", content: sys}, ...turns.slice(0, -1)],
+    monitor(m) { m.addEventListener("downloadprogress", e => { $("qstatus").textContent = `Téléchargement de l'IA de Chrome : ${Math.round(e.loaded * 100)} %`; }); }});
+  let out = "";
+  const stream = s.promptStreaming(turns[turns.length - 1].content, LM_OPTS);
+  for await (const chunk of stream) { out = chunk.startsWith(out) ? chunk : out + chunk; onText(out); }
+  try { s.destroy(); } catch (e) {}
+  return out;
+}
+async function askApi(turns, sys = RULES, maxTok = 500) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {method: "POST",
+    headers: {"content-type": "application/json", "x-api-key": getKey(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true"},
+    body: JSON.stringify({model: MODEL, max_tokens: maxTok, system: sys, messages: turns})});
+  if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error(r.status === 401 ? "La clé n'est pas valide." : "Erreur " + r.status + " " + t.slice(0, 120)); }
+  const j = await r.json(); return (j.content || []).map(c => c.text || "").join("").trim();
+}
+async function askCopy(turns, sys = RULES, target = null, label = "Ouvrir Claude avec ma question") {
+  const text = sys + "\n\n" + turns.map(t => (t.role === "user" ? "" : "Ta réponse précédente : ") + t.content).join("\n\n");
+  let copied = false; try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
+  const a = mk("a", "", label); a.href = "https://claude.ai/new?q=" + encodeURIComponent(text.slice(0, 6000)); a.target = "_blank"; a.rel = "noopener";
+  const p = mk("p", "msg warn"); p.append(copied ? "Ta question est copiée. " : "", a, ". Si elle n'apparaît pas, colle-la (Ctrl + V).");
+  (target || $("qthread")).append(p);
+  return null;
+}
+async function ask(userText) {
+  if (!cur) return;
+  cur.turns.push({role: "user", content: userText});
+  $("qsend").disabled = true; $("qfollow").hidden = true; $("qstatus").textContent = "Je réfléchis… Le cours continue de s'écrire.";
+  await detectEngine();
+  let body = null;
+  try {
+    let ans;
+    if (engine === "builtin") { body = addBubble("assistant", "…"); ans = await askBuiltin(cur.turns, t => { body.textContent = t; }); }
+    else if (engine === "api") { body = addBubble("assistant", "…"); ans = await askApi(cur.turns); body.textContent = ans; }
+    else { ans = await askCopy(cur.turns); }
+    if (ans) { cur.turns.push({role: "assistant", content: ans}); $("qfollow").hidden = false; $("qstatus").textContent = ""; }
+    else { cur.turns.pop(); $("qstatus").textContent = ""; }
+  } catch (e) {
+    cur.turns.pop();
+    if (body) body.textContent = "";
+    $("qstatus").textContent = (e && e.message ? e.message + " " : "") + "La réponse n'a pas pu venir. Réessaie, ou ouvre « Réglages des réponses ».";
+  } finally { $("qsend").disabled = false; save(); }
+}
+$("qsend").addEventListener("click", () => {
+  if (!cur) return;
+  if (!cur.turns.length) { cur.question = $("qtext").value.trim(); if (cur.question) addBubble("user", cur.question); ask(firstPrompt(cur)); }
+  else { const t = $("qtext").value.trim(); if (!t) return; addBubble("user", t); ask(t); }
+  $("qtext").value = "";
+});
+$("qfollow").addEventListener("click", e => {
+  const b = e.target.closest("button[data-f]"); if (!b || !cur) return; const f = b.dataset.f;
+  if (FOLLOW[f]) { addBubble("user", b.textContent); ask(FOLLOW[f]); }
+  else if (f === "copie") {
+    const last = [...cur.turns].reverse().find(t => t.role === "assistant");
+    if (last) copyText(`? ${cur.passage.slice(0, 160)}\n→ ${last.content}`, "Réponse copiée. Colle-la dans Word avec Ctrl + V.");
+  }
+  else if (f === "compris") { cur.compris = true; $("qpanel").hidden = true; finishQuestion(); info("Bien. La question est gardée dans « Mes questions »."); }
+});
+function finishQuestion() {
+  if (cur && cur.turns.length) { questions.push({t: cur.t, passage: cur.passage, question: cur.question || "", turns: cur.turns, compris: cur.compris}); save(); renderHist(); }
+  cur = null;
+}
+function renderHist() {
+  const h = $("qhist"); h.replaceChildren(); $("qhist-box").hidden = !questions.length;
+  questions.forEach(q => {
+    const d = mk("details"); const s = mk("summary", "", `${fmt(q.t)} · ${q.compris ? "compris" : "à revoir"} · ${q.passage.slice(0, 60)}…`);
+    d.append(s); q.turns.filter(t => t.role === "assistant").forEach(t => d.append(mk("p", "answer", t.content))); h.append(d);
+  });
+}
+$("keysave").addEventListener("click", async () => { try { localStorage.setItem("ni-cle", $("key").value.trim()); } catch (e) {} $("key").value = ""; await detectEngine(); info(getKey() ? "Clé enregistrée sur cet appareil." : "Clé retirée."); });
+
+async function copyText(t, ok) {
+  try { await (pipWin ? pipWin.navigator : navigator).clipboard.writeText(t); info(ok); }
+  catch (e) { try { await navigator.clipboard.writeText(t); info(ok); } catch (e2) { info("Copie impossible ici. Surligne le texte et fais Ctrl + C."); } }
+}
+if (location.hash === "#compact") document.body.classList.add("compact");
+$("popup-btn").addEventListener("click", () => {
+  const w = window.open(location.href.split("#")[0] + "#compact", "ecoute-ni", "width=460,height=820");
+  if (!w) note("La petite fenêtre a été bloquée. Autorise les fenêtres pour cette page, ou utilise la fenêtre flottante.", "warn");
+  else note("Le cours s'ouvre dans une petite fenêtre. Arrête l'écoute ici si elle tourne, puis démarre-la dans la petite fenêtre.", "ok");
+});
+/* ---------- Fenêtre flottante (reste au-dessus de Word, OneNote…) ---------- */
+const PIP_LABEL = "Fenêtre flottante (reste au-dessus de Word)";
+async function openPip() {
+  if (pipWin) return true;
+  if (!("documentPictureInPicture" in window)) { $("pip-none").hidden = false; return false; }
+  const live = $("live");
+  try {
+    pipWin = await documentPictureInPicture.requestWindow({width: 440, height: 700});
+    [...document.querySelectorAll("style, link[rel=stylesheet]")].forEach(n => pipWin.document.head.append(n.cloneNode(true)));
+    pipWin.document.documentElement.style.cssText = document.documentElement.style.cssText;
+    pipWin.document.title = ($("matiere").value || "Cours") + " · en direct";
+    pipWin.document.body.classList.add("pip"); pipWin.document.body.style.padding = "10px";
+    pipWin.document.body.append(live);
+    bindSelection(pipWin.document);
+    $("main").classList.add("inpip"); $("pip-btn").textContent = "Remettre le cours ici"; $("pip-btn").classList.add("on");
+    pipWin.addEventListener("pagehide", () => { $("live-home").prepend(live); pipWin = null; $("main").classList.remove("inpip"); $("pip-btn").textContent = PIP_LABEL; $("pip-btn").classList.remove("on"); });
+    return true;
+  } catch (e) { pipWin = null; note("La fenêtre flottante n'a pas pu s'ouvrir. Clique sur le bouton « Fenêtre flottante » pour réessayer.", "warn"); return false; }
+}
+$("pip-btn").addEventListener("click", () => { if (pipWin) pipWin.close(); else openPip(); });
+
+/* ---------- Taille, export, effacer ---------- */
+let size = 20;
+const setSize = v => { size = Math.min(34, Math.max(15, v)); document.documentElement.style.setProperty("--size", size + "px"); if (pipWin) pipWin.document.documentElement.style.setProperty("--size", size + "px"); };
+$("moins").addEventListener("click", () => setSize(size - 2));
+$("plus").addEventListener("click", () => setSize(size + 2));
+function asText() {
+  const head = `${$("matiere").value || "Cours"} — ${new Date().toLocaleDateString("fr-FR")}\n(Transcription automatique : à relire. Le son n'a pas été enregistré.)\n\n`;
+  const body = segs.map(s => `[${fmt(s.t)}] ${s.fix || s.text}${s.imp ? "  [IMPORTANT]" : ""}${s.dif ? "  [DIFFICILE]" : ""}${s.q ? "  [QUESTION]" : ""}`).join("\n");
+  const q = questions.length ? `\n\n===== MES QUESTIONS =====\n` + questions.map(q => `[${fmt(q.t)}] « ${q.passage} »${q.question ? "\nQuestion : " + q.question : ""}\n` + q.turns.filter(t => t.role === "assistant").map(t => "→ " + t.content).join("\n") + (q.compris ? "\n(compris)" : "\n(à revoir)")).join("\n\n") : "";
+  const o = Object.keys(MAKE).filter(k => outputs[k]).map(k => `\n\n===== ${MAKE[k].title.toUpperCase()} (créé par l'IA, à vérifier) =====\n${outputs[k]}`).join("");
+  return head + body + o + q;
+}
+$("copier").addEventListener("click", () => copyText(asText(), "Tout le cours est copié. Colle-le dans Word ou dans l'Atelier."));
+$("telecharger").addEventListener("click", () => {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([asText()], {type: "text/plain;charset=utf-8"}));
+  a.download = `cours-${($("matiere").value || "sans-nom").toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); info("Fichier téléchargé.");
+});
+let confirmClear = false;
+$("effacer").addEventListener("click", () => {
+  if (running) { info("Arrête d'abord l'écoute."); return; }
+  if (!confirmClear) { confirmClear = true; $("effacer").textContent = "Effacer vraiment ?"; setTimeout(() => { confirmClear = false; $("effacer").textContent = "Effacer le cours"; }, 5000); return; }
+  segs = []; questions = []; outputs = {}; selIdx = null; save(); renderAll(); renderHist(); $("fin").hidden = true;
+  confirmClear = false; $("effacer").textContent = "Effacer le cours"; $("go").textContent = "Autoriser et démarrer"; $("etat").textContent = "Prêt"; $("reprise").hidden = true; info("Cours effacé.");
+});
+
+/* ---------- Fin du cours ---------- */
+const MAKE = {
+  structure: {title: "Cours organisé", tok: 1800, ask: "Organise ce cours en parties. Pour chaque partie : un titre court sur sa propre ligne, puis les idées en phrases courtes, avec un tiret au début. Garde les mots du prof. N'ajoute rien qui n'est pas dans le cours. Si un passage semble mal transcrit, écris [à vérifier]."},
+  synthese: {title: "Synthèse", tok: 700, ask: "Fais une synthèse du cours en 5 à 8 phrases courtes : les idées principales, dans l'ordre du cours. N'ajoute rien qui n'est pas dans le cours."},
+  lexique: {title: "Mots difficiles", tok: 1000, ask: "Liste les mots difficiles ou techniques du cours (10 au maximum). Pour chacun, une ligne : le mot, deux points, une définition simple en une phrase, tirée du cours si possible."}
+};
+const RULES_FIN = "Tu aides un élève après son cours. Il est peut-être dys ou TDAH. Français simple, phrases courtes, une idée par phrase. Utilise seulement le cours donné. Le texte vient d'une transcription automatique : il peut contenir des erreurs. Pas de mise en forme Markdown (pas d'astérisques, pas de #).";
+const courseText = () => segs.map(s => s.fix || s.text).join(" ");
+function jumpTo(i) {
+  const d = $("texte").querySelector(`.seg[data-i="${i}"]`); if (!d) return;
+  d.classList.add("flash"); d.scrollIntoView({block: "center", behavior: "smooth"}); setTimeout(() => d.classList.remove("flash"), 6000);
+}
+function openFin() {
+  const marks = segs.filter(s => s.imp || s.dif || s.q).length;
+  const toReview = questions.filter(q => !q.compris).length;
+  $("fin-resume").textContent = `${fmt(segs.length ? segs[segs.length - 1].t : 0)} de cours · ${words()} mots · ${marks} passage(s) marqué(s) · ${questions.length} question(s), dont ${toReview} à revoir.`;
+  // 1. À revoir
+  const rv = $("fin-revoir"); rv.replaceChildren();
+  segs.forEach((s, i) => {
+    if (!(s.imp || s.dif || s.q)) return;
+    const b = mk("button", "rev"); const p = mk("span", "", s.fix || s.text);
+    if (s.imp) p.append(mk("span", "tag imp", "Important"));
+    if (s.dif) p.append(mk("span", "tag dif", "Difficile"));
+    if (s.q) p.append(mk("span", "tag q", "Question"));
+    b.append(mk("time", "muted", fmt(s.t)), p); b.addEventListener("click", () => jumpTo(i)); rv.append(b);
+  });
+  questions.filter(q => !q.compris).forEach(q => {
+    const d = mk("div", "msg warn"); d.append(mk("b", "", "Question à revoir : "), `« ${q.passage.slice(0, 140)} »`);
+    const last = q.turns.filter(t => t.role === "assistant").pop(); if (last) d.append(mk("p", "", "→ " + last.content));
+    rv.append(d);
+  });
+  if (!rv.children.length) rv.append(mk("p", "muted", "Rien de marqué pendant ce cours. Pendant le prochain, utilise « Important », « Difficile » ou « Je ne comprends pas »."));
+  renderCorr(); renderOutputs();
+  $("fin").hidden = false; $("fin").scrollIntoView({behavior: "smooth", block: "start"});
+}
+function renderCorr() {
+  const box = $("fin-corr"); box.replaceChildren();
+  if (!segs.length) { box.append(mk("p", "muted", "Pas encore de texte.")); return; }
+  segs.forEach((s, i) => {
+    const row = mk("div", "corr"); const txt = mk("span", "", s.fix || s.text);
+    if (s.fix) txt.append(mk("span", "orig", "Original : " + s.text));
+    const btn = mk("button", "", "Corriger");
+    btn.addEventListener("click", () => {
+      const inp = mk("input"); inp.type = "text"; inp.value = s.fix || s.text; inp.setAttribute("aria-label", "Phrase corrigée"); inp.style.width = "100%";
+      const ok = mk("button", "primary", "Enregistrer"); const back = mk("button", "", s.fix ? "Remettre l'original" : "Annuler");
+      const actions = mk("span", "row"); actions.append(ok, back);
+      row.replaceChildren(mk("time", "muted", fmt(s.t)), inp, actions); inp.focus();
+      ok.addEventListener("click", () => { const v = inp.value.trim(); if (v && v !== s.text) s.fix = v; else delete s.fix; save(); renderAll(); renderCorr(); info("Phrase corrigée. L'original est gardé."); });
+      back.addEventListener("click", () => { if (s.fix) { delete s.fix; save(); renderAll(); } renderCorr(); });
+      inp.addEventListener("keydown", e => { if (e.key === "Enter") ok.click(); if (e.key === "Escape") back.click(); });
+    });
+    row.append(mk("time", "muted", fmt(s.t)), txt, btn); box.append(row);
+  });
+}
+function renderOutputs() {
+  const box = $("fin-out"); box.replaceChildren();
+  for (const k of Object.keys(MAKE)) {
+    if (!outputs[k]) continue;
+    const wrap = mk("div", "stack");
+    const head = mk("div", "row"); head.style.justifyContent = "space-between";
+    head.append(mk("b", "", MAKE[k].title + " · créé par l'IA, à vérifier avec le cours"));
+    const c = mk("button", "", "Copier"); c.addEventListener("click", () => copyText(outputs[k], MAKE[k].title + " copié(e). Colle dans Word avec Ctrl + V."));
+    head.append(c); wrap.append(head, mk("div", "out", outputs[k])); box.append(wrap);
+  }
+}
+let making = false;
+$("fin").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-make]"); if (!b || making) return;
+  const k = b.dataset.make; const st = $("fin-status");
+  if (words() < 40) { st.textContent = "Le cours est trop court pour ça."; return; }
+  making = true; st.textContent = "Je prépare « " + MAKE[k].title + " »… L'original ne change pas.";
+  const turns = [{role: "user", content: `${MAKE[k].ask}\n\nLE COURS (${$("matiere").value || "sans titre"}) :\n"""${courseText().slice(0, 12000)}"""`}];
+  await detectEngine();
+  try {
+    let out = null;
+    if (engine === "builtin") { outputs[k] = "…"; renderOutputs(); out = await askBuiltin(turns, t => { outputs[k] = t; renderOutputs(); }, RULES_FIN); }
+    else if (engine === "api") out = await askApi(turns, RULES_FIN, MAKE[k].tok);
+    else { await askCopy(turns, RULES_FIN, $("fin-out"), "Ouvrir Claude pour le faire"); }
+    if (out) { outputs[k] = out.trim(); renderOutputs(); save(); st.textContent = "Fait. Vérifie toujours avec le cours."; }
+    else if (engine !== "copy") { delete outputs[k]; renderOutputs(); st.textContent = "Rien n'est venu. Réessaie."; }
+    else st.textContent = "";
+  } catch (err) { delete outputs[k]; renderOutputs(); st.textContent = (err && err.message ? err.message + " " : "") + "Ça n'a pas marché. Réessaie, ou ouvre « Réglages des réponses »."; }
+  finally { making = false; }
+});
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+function wordDoc() {
+  const title = $("matiere").value || "Cours";
+  const date = new Date().toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long", year: "numeric"});
+  const para = segs.map(s => {
+    const bg = s.imp ? "background:#FFF3A3;" : s.dif ? "background:#FBE0DA;" : "";
+    const tags = (s.imp ? " <b>[Important]</b>" : "") + (s.dif ? " <b>[Difficile]</b>" : "") + (s.q ? " <b>[Question]</b>" : "");
+    return `<p style="${bg}"><span style="color:#6B7280;font-size:9pt">${fmt(s.t)}</span>&nbsp; ${esc(s.fix || s.text)}${tags}</p>`;
+  }).join("");
+  const outs = Object.keys(MAKE).filter(k => outputs[k]).map(k => `<h2>${MAKE[k].title}</h2><p style="color:#6B7280;font-size:9pt">Créé par l'IA, à vérifier avec le cours.</p>` + outputs[k].split("\n").filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join("")).join("");
+  const qs = questions.length ? "<h2>Mes questions</h2>" + questions.map(q => `<p><b>« ${esc(q.passage)} »</b>${q.question ? "<br>Question : " + esc(q.question) : ""}</p>` + q.turns.filter(t => t.role === "assistant").map(t => `<p style="margin-left:18pt">→ ${esc(t.content)}</p>`).join("") + `<p style="color:#6B7280">${q.compris ? "Compris" : "À revoir"}</p>`).join("") : "";
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>body{font-family:'Atkinson Hyperlegible',Verdana,Arial,sans-serif;font-size:13pt;line-height:1.6}h1{font-size:20pt;color:#2C3E9E}h2{font-size:15pt;color:#2C3E9E;margin-top:18pt}p{margin:0 0 6pt}</style></head><body>
+<h1>${esc(title)}</h1><p>${esc(date)}</p><p style="color:#6B7280;font-size:10pt">Transcription automatique, à relire. Le son n'a pas été enregistré. Les phrases corrigées remplacent l'original dans ce document.</p>
+${outs}<h2>Le cours</h2>${para}${qs}</body></html>`;
+}
+$("fin-word").addEventListener("click", () => {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + wordDoc()], {type: "application/msword"}));
+  a.download = `${($("matiere").value || "cours").replace(/[^a-z0-9À-ÿ]+/gi, "-")}-${new Date().toISOString().slice(0, 10)}.doc`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  info("Fichier Word téléchargé. Ouvre-le : si Word pose une question sur le format, clique sur « Oui ».");
+});
+$("fin-copy").addEventListener("click", () => copyText(asText(), "Tout le cours est copié. Colle-le dans Word avec Ctrl + V."));
+$("fin-atelier").addEventListener("click", () => { copyText(courseText(), "Cours copié. Colle-le dans l'Atelier, case « Le cours »."); });
+$("fin-open").addEventListener("click", () => { if (!segs.length) { info("Il n'y a pas encore de texte."); return; } openFin(); });
+$("fin-close").addEventListener("click", () => { $("fin").hidden = true; });
+
+/* ---------- Démarrage ---------- */
+const old = load();
+if (old) {
+  segs = old.segs || []; questions = old.questions || []; outputs = old.outputs || {}; $("matiere").value = old.matiere || "";
+  renderAll(); renderHist();
+  if (segs.length) { const r = $("reprise"); r.hidden = false; r.textContent = `Le texte de ton dernier cours est là (${words()} mots). Tu peux reprendre l'écoute, le télécharger, ou l'effacer.`; $("go").textContent = "Reprendre l'écoute"; }
+}
+if (!("documentPictureInPicture" in window)) { $("pip-btn").hidden = true; $("auto-pip-row").hidden = true; $("pip-help").hidden = true; $("pip-none").hidden = false; }
+try { const v = localStorage.getItem("ni-auto-pip"); if (v !== null) $("auto-pip").checked = v === "1"; } catch (e) {}
+$("auto-pip").addEventListener("change", () => { try { localStorage.setItem("ni-auto-pip", $("auto-pip").checked ? "1" : "0"); } catch (e) {} });
+if (!SR) { setMode("off", "Non disponible"); note("Ce navigateur ne sait pas transcrire. Ouvre cette page dans Google Chrome ou Microsoft Edge.", "err"); }
+else if (typeof SR.available === "function") {
+  SR.available({langs: [LANG], processLocally: true, quality: "dictation"})
+    .then(st => st === "available" ? setMode("local", "Écoute sur l'appareil") : setMode("cloud", "Écoute en ligne (Google)"))
+    .catch(() => setMode("cloud", "Écoute en ligne (Google)"));
+} else setMode("cloud", "Écoute en ligne (Google)");
+detectEngine();
+document.addEventListener("visibilitychange", async () => { if (document.visibilityState === "visible" && running && !wake) { try { wake = await navigator.wakeLock.request("screen"); } catch (e) {} } });
+})();
+</script>
+</body>
+</html>
