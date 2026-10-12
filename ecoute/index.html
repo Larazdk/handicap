@@ -149,6 +149,14 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
       <div class="bar" style="flex:1 1 160px;height:14px;border-radius:999px;background:var(--line);overflow:hidden"><i id="miclevel" style="display:block;height:100%;width:0;background:var(--good)"></i></div>
     </div>
     <p class="muted" id="micinfo">Clique sur « Tester le micro » et parle : la barre verte doit bouger.</p>
+    <div class="row">
+      <label for="engine-mode">Écoute</label>
+      <select id="engine-mode">
+        <option value="auto">Automatique</option>
+        <option value="cloud">En ligne (Google) : marche presque partout</option>
+        <option value="local">Sur l'appareil : rien ne sort</option>
+      </select>
+    </div>
   </section>
 
   <div class="card" id="place">
@@ -175,6 +183,7 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
           <button class="stop" id="stop" hidden>Arrêter</button>
         </div>
       </div>
+      <p class="muted" id="diag" aria-live="polite"></p>
       <div class="row" id="veille" hidden>
         <span class="muted">Pause de</span>
         <button data-min="5">5 min</button><button data-min="10">10 min</button><button data-min="15">15 min</button><button data-min="0">Sans limite</button>
@@ -357,7 +366,8 @@ function load() { try { return JSON.parse(localStorage.getItem(KEY) || localStor
 async function chooseEngine() {
   if (!SR) { setMode("off", "Non disponible"); note("Ce navigateur ne sait pas transcrire. Ouvre cette page dans Google Chrome ou Microsoft Edge.", "err"); return false; }
   local = false;
-  if (typeof SR.available === "function") {
+  const mode = $("engine-mode").value;
+  if (mode !== "cloud" && typeof SR.available === "function") {
     try {
       const st = await SR.available({langs: [LANG], processLocally: true, quality: "dictation"});
       if (st === "available") local = true;
@@ -374,11 +384,12 @@ async function chooseEngine() {
 function makeRec() {
   const r = new SR(); r.lang = LANG; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
   if ("processLocally" in r) r.processLocally = local;
-  r.onresult = e => { let interim = "";
+  r.onresult = e => { gotText = true; diag("Le texte arrive ✓"); let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) { const res = e.results[i]; if (res.isFinal) addFinal(res[0].transcript); else interim += res[0].transcript; }
     showInterim(interim.trim()); };
   r.onerror = e => {
-    if (e.error === "no-speech" || e.error === "aborted") return;
+    if (e.error === "no-speech") { diag("Aucune voix entendue. Parle plus près du micro."); return; }
+    if (e.error === "aborted") return;
     if (e.error === "audio-capture") { note("Aucun son n'arrive du micro. Utilise « Tester le micro » après avoir arrêté.", "err"); stopAll(); return; }
     if (local && (e.error === "language-not-supported" || e.error === "service-not-allowed" || e.error === "not-allowed")) {
       local = false; note("L'écoute sur l'appareil ne marche pas ici. Je passe en écoute en ligne (Google).", "warn");
@@ -388,7 +399,10 @@ function makeRec() {
     if (e.error === "network") { note("Le réseau a coupé. J'essaie de reprendre. Le texte déjà écrit est gardé.", "warn"); return; }
     note("Petit souci de transcription (" + e.error + "). J'essaie de reprendre.", "warn");
   };
-  r.onstart = () => { lastStart = Date.now(); };
+  r.onstart = () => { lastStart = Date.now(); diag("Micro ouvert, j'attends la voix…"); };
+  r.onaudiostart = () => diag("Le son arrive au micro.");
+  r.onspeechstart = () => diag("Voix détectée, j'écris…");
+  r.onnomatch = () => diag("J'entends, mais je ne reconnais pas les mots. Rapproche le micro.");
   r.onend = () => {
     showInterim(""); if (!running || paused || r !== rec) return;
     fails = Date.now() - lastStart < 1500 ? fails + 1 : 0;           // s'arrête tout de suite = problème
@@ -431,7 +445,8 @@ $("mictest").addEventListener("click", async () => {
   }, 80);
 });
 
-let fails = 0, lastStart = 0;
+let fails = 0, lastStart = 0, gotText = false, watchdog = null;
+function diag(t) { const d = $("diag"); if (d) d.textContent = t; }
 async function start() {
   if (!$("accord").checked) return;
   const before = await micState();
@@ -441,6 +456,13 @@ async function start() {
     note("Le micro est autorisé. Clique sur « Fenêtre flottante » pour garder le cours devant Word.", "ok");
   fails = 0;
   if (!(await chooseEngine())) return;
+  gotText = false; clearTimeout(watchdog);
+  if (local && $("engine-mode").value === "auto") watchdog = setTimeout(() => {
+    if (running && !paused && !gotText && local) {
+      local = false; note("Rien n'est écrit avec l'écoute sur l'appareil. Je passe en écoute en ligne (Google).", "warn");
+      setMode("cloud", "Écoute en ligne (Google)"); const old = rec; rec = makeRec(); try { old.abort(); } catch (x) {} setTimeout(() => { try { rec.start(); } catch (x) {} }, 300);
+    }
+  }, 15000);
   rec = makeRec(); running = true; paused = false;
   t0 = Date.now() - (segs.length ? segs[segs.length - 1].t : 0); pausedMs = 0;
   try { rec.start(); } catch (e) {}
@@ -466,7 +488,7 @@ function resume() {
   try { navigator.vibrate && navigator.vibrate(200); } catch (e) {}
 }
 function stopAll() {
-  running = false; paused = false; clearTimeout(resumeTimer); clearTimeout(stopTimer); clearInterval(tick);
+  running = false; paused = false; clearTimeout(resumeTimer); clearTimeout(stopTimer); clearInterval(tick); clearTimeout(watchdog); diag("");
   try { rec && rec.stop(); } catch (e) {} showInterim("");
   $("go").hidden = false; $("go").textContent = "Reprendre l'écoute"; $("pause").hidden = true; $("stop").hidden = true; $("veille").hidden = true; $("prep").hidden = false;
   $("pause").textContent = "Pause"; $("etat").textContent = segs.length ? "Arrêté · texte gardé" : "Prêt"; $("mode").classList.remove("live");
@@ -841,6 +863,8 @@ if (old) {
 }
 if (!("documentPictureInPicture" in window)) { $("pip-btn").hidden = true; $("auto-pip-row").hidden = true; $("pip-help").hidden = true; $("pip-none").hidden = false; }
 try { const v = localStorage.getItem("ni-auto-pip"); if (v !== null) $("auto-pip").checked = v === "1"; } catch (e) {}
+try { const m = localStorage.getItem("ni-engine"); if (m) $("engine-mode").value = m; } catch (e) {}
+$("engine-mode").addEventListener("change", () => { try { localStorage.setItem("ni-engine", $("engine-mode").value); } catch (e) {} });
 $("auto-pip").addEventListener("change", () => { try { localStorage.setItem("ni-auto-pip", $("auto-pip").checked ? "1" : "0"); } catch (e) {} });
 if (!SR) { setMode("off", "Non disponible"); note("Ce navigateur ne sait pas transcrire. Ouvre cette page dans Google Chrome ou Microsoft Edge.", "err"); }
 else if (typeof SR.available === "function") {
