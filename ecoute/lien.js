@@ -16,6 +16,7 @@
   /* ---------------- Le téléphone : il envoie ---------------- */
   if (target) {
     $("lien-go").hidden = true;
+    try { $("place").hidden = true; } catch (e) {}   // sur le téléphone, la fenêtre flottante ne sert à rien
     $("lien-intro").textContent = "Ce téléphone envoie le cours à ton ordinateur. Pose-le près du prof, puis démarre l'écoute plus bas.";
     let peer = null, conn = null, sent = 0, retry = null;
     try { $("boost").checked = false; } catch (e) {}   // téléphone près du prof : pas besoin d'amplifier

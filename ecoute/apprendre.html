@@ -46,6 +46,9 @@ button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:3px solid var(--lilas);outline-offset:2px}
 input[type=text],input[type=date],textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px}
 textarea{width:100%;min-height:90px;resize:vertical;line-height:var(--lh)}
+.nav{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--side);border:1px solid var(--line)}
+.nav a{padding:8px 20px;border-radius:999px;text-decoration:none;color:var(--fg);font-weight:700;min-height:40px;display:inline-flex;align-items:center}
+.nav a[aria-current=page]{background:var(--ink);color:#FFFFFF}
 .tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--side);border:1px solid var(--line);flex-wrap:wrap}
 .tabs button{border:0;background:transparent;min-height:42px}
 .tabs button[aria-selected=true]{background:var(--ink);color:#FFFFFF}
@@ -108,7 +111,7 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 <div class="wrap">
   <div class="row" style="justify-content:space-between">
     <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Apprendre</span></h1>
-    <a class="btn" href="./">Retour à Écoute</a>
+    <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav>
   </div>
 
   <div class="tabs" role="tablist" aria-label="Sections">
@@ -124,7 +127,8 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
       <span class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.08em">Ta révision du jour</span>
       <p class="big" id="jour-titre">…</p>
       <p id="jour-sous" class="muted" style="font-size:17px"></p>
-      <div class="row"><button class="primary" id="go">Commencer</button><span class="muted" id="jour-suite"></span></div>
+      <div class="row" id="jour-go"><button class="primary" id="go">Commencer</button><span class="muted" id="jour-suite"></span></div>
+      <div class="row" id="vide" hidden><button class="primary" id="vide-imp">Importer un cours</button><a class="btn" href="./">Prendre un cours avec Écoute</a></div>
     </div>
 
     <div id="seance" hidden style="display:flex;flex-direction:column;gap:16px">
@@ -151,7 +155,7 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
       <div class="row"><button class="primary" id="bilan-ok">Revenir</button></div>
     </div>
 
-    <div class="card">
+    <div class="card" id="reglages">
       <h3>Réglages</h3>
       <div class="row"><label for="exam"><b>Date du partiel</b></label><input type="date" id="exam"><span class="muted">À l'approche du partiel, les notions reviennent plus souvent.</span></div>
       <div class="tools">
@@ -295,7 +299,8 @@ function todayQueue(now = Date.now()) {
 }
 function renderToday() {
   const q = todayQueue(), n = q.length;
-  if (!db.notions.length) { $("jour-titre").textContent = "Rien à réviser pour l'instant"; $("jour-sous").textContent = "Ajoute des notions dans « Mes notions », ou prends les passages marqués dans Écoute."; $("go").disabled = true; $("jour-suite").textContent = ""; return; }
+  $("vide").hidden = !!db.notions.length; $("jour-go").hidden = !db.notions.length;
+  if (!db.notions.length) { $("jour-titre").textContent = "Rien à réviser pour l'instant"; $("jour-sous").textContent = "Importe un cours (Word, PDF ou texte), ou prends un cours avec Écoute : les passages marqués arrivent ici tout seuls."; return; }
   if (!n) { const next = Math.min(...db.notions.map(x => x.due || Infinity)); $("jour-titre").textContent = "Tout est à jour"; $("jour-sous").textContent = "Reviens " + when(next) + ". Ton cerveau a besoin de temps pour oublier un peu."; $("go").disabled = true; $("jour-suite").textContent = ""; return; }
   const min = Math.max(1, Math.round(n * SEC_PER / 60));
   $("jour-titre").textContent = `${n} notion${n > 1 ? "s" : ""}, ${min} minute${min > 1 ? "s" : ""}`;
@@ -332,7 +337,7 @@ let queue = [], idx = 0, done = 0, stats = {1: 0, 2: 0, 3: 0}, shown = false;
 function startSession() {
   queue = todayQueue(); idx = 0; done = 0; stats = {1: 0, 2: 0, 3: 0};
   if (!queue.length) return;
-  $("accueil").hidden = true; $("bilan").hidden = true; $("seance").hidden = false; showCard();
+  $("accueil").hidden = true; $("bilan").hidden = true; $("reglages").hidden = true; $("seance").hidden = false; showCard();
 }
 function showCard() {
   const n = queue[idx]; shown = false;
@@ -358,7 +363,7 @@ function grade(g) {
   if (idx >= queue.length) endSession(); else showCard();
 }
 function endSession() {
-  $("seance").hidden = true; $("bilan").hidden = false; $("prog").style.width = "100%";
+  $("seance").hidden = true; $("bilan").hidden = false; $("reglages").hidden = false; $("prog").style.width = "100%";
   const tot = stats[1] + stats[2] + stats[3];
   $("bilan-t").textContent = tot ? `${stats[3]} facile${stats[3] > 1 ? "s" : ""}, ${stats[2]} avec effort, ${stats[1]} raté${stats[1] > 1 ? "s" : ""}. Les notions difficiles reviendront plus tôt.` : "Tu reprendras plus tard.";
   renderToday(); renderList();
@@ -413,18 +418,24 @@ $("ajout-go").addEventListener("click", () => {
   const v = $("ajout").value.trim(); if (v.split(/\s+/).length < 3) { note("Écris une phrase d'au moins 3 mots.", "warn"); return; }
   const n = makeNotion(v, "manuel", ""); db.notions.push(n); save(); $("ajout").value = ""; renderList(); renderToday(); openEditor(n);
 });
-$("import").addEventListener("click", () => {
+function importEcoute() {
   let ec = null; try { ec = JSON.parse(localStorage.getItem("ni-ecoute-v2") || "null"); } catch (e) {}
-  if (!ec || !ec.segs || !ec.segs.length) { $("import-info").textContent = "Aucun cours trouvé dans Écoute sur cet appareil."; return; }
-  const have = new Set(db.notions.map(n => n.text));
+  if (!ec || !ec.segs || !ec.segs.length) return -1;
+  db.seen = db.seen || [];   // une notion supprimée ne revient pas
+  const have = new Set(db.notions.map(n => n.text).concat(db.seen));
   const src = (ec.matiere || "Cours") + " · " + new Date().toLocaleDateString("fr-FR");
   let added = 0;
   ec.segs.forEach(s => {
     const text = (s.fix || s.text || "").trim(); if (!text || text.split(/\s+/).length < 3 || have.has(text)) return;
     const mark = s.dif ? "dif" : s.q ? "q" : s.imp ? "imp" : null; if (!mark) return;
-    db.notions.push(makeNotion(text, mark, src)); have.add(text); added++;
+    db.notions.push(makeNotion(text, mark, src)); have.add(text); db.seen.push(text); added++;
   });
   save(); renderList(); renderToday();
+  return added;
+}
+$("import").addEventListener("click", () => {
+  const added = importEcoute();
+  if (added < 0) { $("import-info").textContent = "Aucun cours trouvé dans Écoute sur cet appareil."; return; }
   $("import-info").textContent = added ? `${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}.` : "Rien de nouveau : marque des passages « Important » ou « Difficile » pendant le cours.";
 });
 
@@ -539,7 +550,9 @@ Object.keys(LH).forEach(k => $(k).addEventListener("click", () => setLh(k)));
 try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { setLh("lh-n"); }
 
 /* Premier passage : on prend tout seul les passages marqués dans Écoute */
-if (!db.notions.length) $("import").click();
+/* À chaque ouverture : les nouveaux passages marqués dans Écoute arrivent tout seuls */
+{ const added = importEcoute(); if (added > 0) note(`${added} passage${added > 1 ? "s" : ""} marqué${added > 1 ? "s" : ""} dans Écoute ${added > 1 ? "sont" : "est"} arrivé${added > 1 ? "s" : ""} dans ta révision.`, "ok"); }
+$("vide-imp").addEventListener("click", () => { tab("notions"); $("imp-card").scrollIntoView({block: "start"}); });
 renderToday(); renderList();
 })();
 </script>

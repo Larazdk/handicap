@@ -137,6 +137,12 @@ h3{font-family:var(--f-title);font-weight:600;color:var(--ink);font-size:18px;ma
 .corr .orig{display:block;font-size:13px;color:var(--muted)}
 .tag.fix{background:var(--good-bg);color:var(--good)}
 .out{white-space:pre-wrap;line-height:1.65;padding:12px;border-radius:10px;background:var(--tint)}
+.nav{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--side);border:1px solid var(--line)}
+.nav a{padding:8px 20px;border-radius:999px;text-decoration:none;color:var(--fg);font-weight:700;min-height:40px;display:inline-flex;align-items:center}
+.nav a[aria-current=page]{background:var(--ink);color:#FFFFFF}
+details.card{display:block}
+details.card > *:not(summary){margin-top:14px}
+details summary{cursor:pointer}
 a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;padding:8px 14px;min-height:46px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
 </style>
 </head>
@@ -144,6 +150,9 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
 <div class="top">
   <div class="row" style="justify-content:space-between">
     <h1 class="brand"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Écoute</span></h1>
+    <nav class="nav" aria-label="Pages d'Alto"><a href="./" aria-current="page">Écoute</a><a href="apprendre.html">Apprendre</a></nav>
+  </div>
+  <div class="row" style="justify-content:flex-end">
     <div class="row">
       <span class="chip" id="mode"><span class="dot"></span><span id="mode-t">Vérification…</span></span>
       <span class="chip" id="ia-chip">Réponses : …</span>
@@ -183,6 +192,9 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
       <div class="bar" style="flex:1 1 160px;height:14px;border-radius:999px;background:var(--line);overflow:hidden"><i id="miclevel" style="display:block;height:100%;width:0;background:var(--good)"></i></div>
     </div>
     <p class="muted" id="micinfo">Clique sur « Tester le micro » et parle : la barre verte doit bouger.</p>
+    <details class="settings" id="son">
+    <summary>Réglages du son (micro, moteur d'écoute)</summary>
+    <div class="stack" style="margin-top:12px">
     <div class="row">
       <label for="micsel">Micro</label>
       <select id="micsel"><option value="">Micro par défaut</option></select>
@@ -204,9 +216,12 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
       <button id="gkeysave">Enregistrer</button>
     </div>
     <p class="muted" id="gkey-help" hidden>Crée un compte gratuit sur <a href="https://app.gladia.io" target="_blank" rel="noopener">app.gladia.io</a> (50 € offerts, environ 73 h de cours), puis copie ta clé (« API key »). Elle reste sur cet appareil. Avec Gladia, le son part chez Gladia pour être écrit, puis il n'est pas gardé par Alto. Si le téléphone est relié, il reçoit la clé tout seul.</p>
+    </div>
+    </details>
   </section>
 
-  <div class="card" id="place">
+  <details class="card" id="place">
+    <summary><b>Garder le cours devant Word</b> (fenêtre flottante)</summary>
     <p><b>Tes notes restent dans ton logiciel</b> (Word, OneNote, Google Docs…). Mets le cours dans une petite fenêtre à côté :</p>
     <div class="row">
       <button class="primary" id="pip-btn">Fenêtre flottante (reste au-dessus de Word)</button>
@@ -215,7 +230,7 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
     <div class="row" id="auto-pip-row"><input type="checkbox" id="auto-pip" checked><label for="auto-pip">Toujours devant : le cours passe en fenêtre flottante quand je démarre</label></div>
     <p class="muted" id="pip-help">La fenêtre flottante reste devant toutes les autres fenêtres (Word, OneNote, le navigateur…). Tu peux la déplacer et l'agrandir.</p>
     <p class="muted" id="pip-none" hidden>Ton navigateur ne propose pas la fenêtre flottante. Mets Chrome à jour (menu ⋮ → Aide → À propos de Google Chrome). Sinon, installe <b>Microsoft PowerToys</b> (gratuit) : avec <b>Windows + Ctrl + T</b>, n'importe quelle fenêtre reste devant.</p>
-  </div>
+  </details>
   <div id="note" class="msg" hidden></div>
 </div>
 
@@ -230,6 +245,7 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
           <button class="stop" id="stop" hidden>Arrêter</button>
         </div>
       </div>
+      <p class="msg warn" id="go-hint">Coche « Le prof a donné son accord pour ce cours » (plus haut) pour pouvoir démarrer.</p>
       <p class="muted"><span id="diag" aria-live="polite"></span> <span id="restarts"></span></p>
       <div class="row" id="veille" hidden>
         <span class="muted">Pause de</span>
@@ -320,9 +336,8 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
         <button class="primary" id="fin-word">Ouvrir dans Word (.doc)</button>
         <button id="fin-copy">Copier tout</button>
         <a class="btn" href="apprendre.html" style="background:var(--hl);border-color:var(--hl);color:#1E1A10">Réviser dans Alto</a>
-        <a class="btn" id="fin-atelier" href="https://claude.ai/artifact/QDWtXaJZggUnrDoufkrVRy" target="_blank" rel="noopener">Réviser dans l'Atelier</a>
       </div>
-      <p class="muted">« Réviser dans l'Atelier » copie le cours, puis ouvre l'Atelier : colle-le dans la case « Le cours ».</p>
+      <p class="muted">« Réviser dans Alto » ouvre Apprendre : les passages que tu as marqués y arrivent tout seuls.</p>
     </div>
   </section>
 
@@ -522,7 +537,7 @@ let boostCtx = null, boostStream = null, boostTrack = null;
 /* ---------- Moteur Gladia (transcription professionnelle, en direct) ---------- */
 let g = null;
 const getGKey = () => { try { return localStorage.getItem("alto-gladia") || ""; } catch (e) { return ""; } };
-function gShowKey() { const on = $("engine-mode").value === "gladia"; $("gkey-row").hidden = !on; $("gkey-help").hidden = !on;
+function gShowKey() { const on = $("engine-mode").value === "gladia"; $("gkey-row").hidden = !on; $("gkey-help").hidden = !on; if (on && !getGKey()) $("son").open = true;
   $("gkey").placeholder = getGKey() ? "Clé enregistrée ✓ (colle une autre clé pour la changer)" : "Colle ta clé ici"; }
 async function gOpen() {
   const key = getGKey();
@@ -656,7 +671,7 @@ async function start() {
   rec = useG ? gRec() : makeRec(); running = true; paused = false;
   t0 = Date.now() - (segs.length ? segs[segs.length - 1].t : 0); pausedMs = 0;
   startRec(rec);
-  $("go").hidden = true; $("pause").hidden = false; $("stop").hidden = false; $("prep").hidden = true;
+  $("go").hidden = true; $("go-hint").hidden = true; $("pause").hidden = false; $("stop").hidden = false; $("prep").hidden = true;
   if (useG) setMode("cloud", "Écoute Gladia"); else setMode(local ? "local" : "cloud", local ? "Écoute sur l'appareil" : "Écoute en ligne (Google)");
   clearTimeout(stopTimer); stopTimer = setTimeout(() => { stopAll(); note("Arrêt automatique : la durée prévue est passée. Le texte est gardé.", "ok"); }, Number($("duree").value) * 60000);
   tick = setInterval(() => { $("etat").textContent = paused ? "En pause" : "J'écoute · " + fmt(elapsed()); }, 500);
@@ -685,7 +700,7 @@ function stopAll() {
   try { wake && wake.release(); } catch (e) {} wake = null; closeBoost(); gClose(); save();
   if (segs.length) openFin();
 }
-$("accord").addEventListener("change", () => { $("go").disabled = !$("accord").checked; });
+$("accord").addEventListener("change", () => { $("go").disabled = !$("accord").checked; $("go-hint").hidden = $("accord").checked; });
 $("go").addEventListener("click", start);
 $("pause").addEventListener("click", () => { if (paused) resume(); else $("veille").hidden = !$("veille").hidden; });
 $("veille").addEventListener("click", e => { const b = e.target.closest("button[data-min]"); if (b) pause(Number(b.dataset.min)); });
@@ -929,7 +944,7 @@ function asText() {
   const o = Object.keys(MAKE).filter(k => outputs[k]).map(k => `\n\n===== ${MAKE[k].title.toUpperCase()} (créé par l'IA, à vérifier) =====\n${outputs[k]}`).join("");
   return head + body + o + q;
 }
-$("copier").addEventListener("click", () => copyText(asText(), "Tout le cours est copié. Colle-le dans Word ou dans l'Atelier."));
+$("copier").addEventListener("click", () => copyText(asText(), "Tout le cours est copié. Colle-le dans Word ou dans Apprendre (Importer un cours)."));
 $("telecharger").addEventListener("click", () => {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([asText()], {type: "text/plain;charset=utf-8"}));
   a.download = `cours-${($("matiere").value || "sans-nom").toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${new Date().toISOString().slice(0, 10)}.txt`;
@@ -1050,7 +1065,6 @@ $("fin-word").addEventListener("click", () => {
   info("Fichier Word téléchargé. Ouvre-le : si Word pose une question sur le format, clique sur « Oui ».");
 });
 $("fin-copy").addEventListener("click", () => copyText(asText(), "Tout le cours est copié. Colle-le dans Word avec Ctrl + V."));
-$("fin-atelier").addEventListener("click", () => { copyText(courseText(), "Cours copié. Colle-le dans l'Atelier, case « Le cours »."); });
 $("fin-open").addEventListener("click", () => { if (!segs.length) { info("Il n'y a pas encore de texte."); return; } openFin(); });
 $("fin-close").addEventListener("click", () => { $("fin").hidden = true; });
 
