@@ -32,6 +32,7 @@
 html,body{margin:0;background:var(--bg)}
 body{color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.5;padding:24px 20px 32px}
 p{margin:0}
+a{color:var(--ink);font-weight:700}
 h1{font-family:var(--f-title);font-weight:600;font-size:28px;margin:0;color:var(--ink);display:flex;align-items:center;gap:10px}
 h1 .sep{color:var(--muted);font-weight:500}
 .brand svg{width:40px;height:40px;flex:none}
@@ -194,8 +195,15 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
         <option value="cloud">En ligne (Google) : marche presque partout</option>
         <option value="auto">Automatique</option>
         <option value="local">Sur l'appareil : rien ne sort</option>
+        <option value="gladia">Gladia : meilleure qualité (clé nécessaire)</option>
       </select>
     </div>
+    <div class="row" id="gkey-row" hidden>
+      <label for="gkey">Clé Gladia</label>
+      <input type="password" id="gkey" placeholder="Colle ta clé ici" autocomplete="off">
+      <button id="gkeysave">Enregistrer</button>
+    </div>
+    <p class="muted" id="gkey-help" hidden>Crée un compte gratuit sur <a href="https://app.gladia.io" target="_blank" rel="noopener">app.gladia.io</a> (50 € offerts, environ 73 h de cours), puis copie ta clé (« API key »). Elle reste sur cet appareil. Avec Gladia, le son part chez Gladia pour être écrit, puis il n'est pas gardé par Alto. Si le téléphone est relié, il reçoit la clé tout seul.</p>
   </section>
 
   <div class="card" id="place">
@@ -509,6 +517,72 @@ $("mictest").addEventListener("click", async () => {
 
 /* ---------- Micro : choix et amplification ---------- */
 let boostCtx = null, boostStream = null, boostTrack = null;
+/* ---------- Moteur Gladia (transcription professionnelle, en direct) ---------- */
+let g = null;
+const getGKey = () => { try { return localStorage.getItem("alto-gladia") || ""; } catch (e) { return ""; } };
+function gShowKey() { const on = $("engine-mode").value === "gladia"; $("gkey-row").hidden = !on; $("gkey-help").hidden = !on;
+  $("gkey").placeholder = getGKey() ? "Clé enregistrée ✓ (colle une autre clé pour la changer)" : "Colle ta clé ici"; }
+async function gOpen() {
+  const key = getGKey();
+  if (!key) { note("Colle d'abord ta clé Gladia (sous « Écoute »), puis appuie sur « Enregistrer ».", "err"); return false; }
+  setMode("cloud", "Connexion à Gladia…");
+  let r;
+  try {
+    r = await fetch("https://api.gladia.io/v2/live", {method: "POST", headers: {"Content-Type": "application/json", "x-gladia-key": key},
+      body: JSON.stringify({encoding: "wav/pcm", sample_rate: 16000, bit_depth: 16, channels: 1,
+        language_config: {languages: ["fr"], code_switching: false}, messages_config: {receive_partial_transcripts: true}})});
+  } catch (e) { note("Gladia ne répond pas. Vérifie internet, puis réessaie. (" + (e.message || e) + ")", "err"); return false; }
+  if (!r.ok) { const t = await r.text().catch(() => ""); note(r.status === 401 || r.status === 403 ? "La clé Gladia n'est pas acceptée. Vérifie-la sur app.gladia.io." : "Gladia refuse la demande (" + r.status + ") " + t.slice(0, 160), "err"); return false; }
+  const j = await r.json();
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: micConstraints()}); } catch (e) { micError(e && e.name); return false; }
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const src = ctx.createMediaStreamSource(stream); const chain = boostChain(ctx, src);
+  const proc = ctx.createScriptProcessor(4096, 1, 1);
+  g = {ctx, stream, proc, url: j.url, id: j.id, ws: null, on: false};
+  const ratio = ctx.sampleRate / 16000;
+  proc.onaudioprocess = e => {
+    if (!g || !g.on || !g.ws || g.ws.readyState !== 1) return;
+    const inp = e.inputBuffer.getChannelData(0); const n = Math.floor(inp.length / ratio); const out = new Int16Array(n);
+    for (let i = 0; i < n; i++) { let sum = 0, c = 0; for (let k = Math.floor(i * ratio); k < Math.floor((i + 1) * ratio); k++) { sum += inp[k]; c++; }
+      const v = c ? sum / c : 0; out[i] = Math.max(-1, Math.min(1, v)) * 0x7fff; }
+    g.ws.send(out.buffer);
+  };
+  chain.connect(proc); proc.connect(ctx.destination);
+  gSocket();
+  return true;
+}
+function gSocket() {
+  if (!g) return;
+  const ws = new WebSocket(g.url); ws.binaryType = "arraybuffer"; g.ws = ws;
+  ws.onopen = () => diag("Gladia est prêt, j'attends la voix…");
+  ws.onmessage = ev => {
+    let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    if (m.type === "transcript" && m.data) {
+      const t = ((m.data.utterance && m.data.utterance.text) || "").trim();
+      if (m.data.is_final) { showInterim(""); if (t) addFinal(t); } else showInterim(t);
+      if (t) diag("Le texte arrive ✓ (Gladia)");
+    } else if (m.type === "error") diag("Gladia : " + ((m.data && m.data.message) || "erreur"));
+  };
+  ws.onclose = ev => { if (g && g.ws === ws && running && ev.code !== 1000) { diag("Gladia a coupé, je reconnecte…"); setTimeout(gSocket, 1000); } };
+}
+const gRec = () => ({
+  start() { if (!g) return; g.on = true; try { g.ctx.resume(); } catch (e) {} },
+  stop() { if (!g) return; g.on = false; try { g.ctx.suspend(); } catch (e) {} },
+  abort() { this.stop(); }
+});
+function gClose() {
+  if (!g) return; const old = g; g = null;
+  try { old.ws && old.ws.readyState === 1 && old.ws.send(JSON.stringify({type: "stop_recording"})); } catch (e) {}
+  setTimeout(() => { try { old.ws && old.ws.close(1000); } catch (e) {} }, 4000);
+  try { old.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+  try { old.proc.disconnect(); old.ctx.close(); } catch (e) {}
+}
+$("engine-mode").addEventListener("change", gShowKey);
+$("gkeysave").addEventListener("click", () => { const v = $("gkey").value.trim(); try { if (v) localStorage.setItem("alto-gladia", v); else localStorage.removeItem("alto-gladia"); } catch (e) {} $("gkey").value = ""; gShowKey(); note(v ? "Clé Gladia enregistrée sur cet appareil." : "Clé Gladia retirée.", "ok"); });
+api.gladiaKey = getGKey;
+api.setGladia = key => { try { localStorage.setItem("alto-gladia", key); localStorage.setItem("ni-engine", "gladia"); } catch (e) {} $("engine-mode").value = "gladia"; gShowKey(); };
+
 function micConstraints() {
   const id = $("micsel").value; const c = {echoCancellation: false, noiseSuppression: true, autoGainControl: true};
   if (id) c.deviceId = {exact: id}; return c;
@@ -565,21 +639,23 @@ async function start() {
   if (before !== "granted" && $("auto-pip").checked && !pipWin && "documentPictureInPicture" in window)
     note("Le micro est autorisé. Clique sur « Fenêtre flottante » pour garder le cours devant Word.", "ok");
   fails = 0;
-  if (!(await chooseEngine())) return;
+  const useG = $("engine-mode").value === "gladia";
+  if (useG) { if (!(await gOpen())) return; }
+  else if (!(await chooseEngine())) return;
   try { chan && chan.postMessage({type: "start", id: myId}); } catch (e) {}
   aborts = 0; gotText = false; clearTimeout(watchdog); restarts = 0; lastErr = ""; $("restarts").textContent = "";
-  if (local && $("engine-mode").value === "auto") watchdog = setTimeout(() => {
+  if (!useG && local && $("engine-mode").value === "auto") watchdog = setTimeout(() => {
     if (running && !paused && !gotText && local) {
       local = false; note("Rien n'est écrit avec l'écoute sur l'appareil. Je passe en écoute en ligne (Google).", "warn");
       setMode("cloud", "Écoute en ligne (Google)"); const old = rec; rec = makeRec(); selfAbort = true; try { old.abort(); } catch (x) {} setTimeout(() => startRec(rec), 300);
     }
   }, 15000);
-  await openBoost(); listMics();
-  rec = makeRec(); running = true; paused = false;
+  if (!useG) await openBoost(); listMics();
+  rec = useG ? gRec() : makeRec(); running = true; paused = false;
   t0 = Date.now() - (segs.length ? segs[segs.length - 1].t : 0); pausedMs = 0;
   startRec(rec);
   $("go").hidden = true; $("pause").hidden = false; $("stop").hidden = false; $("prep").hidden = true;
-  setMode(local ? "local" : "cloud", local ? "Écoute sur l'appareil" : "Écoute en ligne (Google)");
+  if (useG) setMode("cloud", "Écoute Gladia"); else setMode(local ? "local" : "cloud", local ? "Écoute sur l'appareil" : "Écoute en ligne (Google)");
   clearTimeout(stopTimer); stopTimer = setTimeout(() => { stopAll(); note("Arrêt automatique : la durée prévue est passée. Le texte est gardé.", "ok"); }, Number($("duree").value) * 60000);
   tick = setInterval(() => { $("etat").textContent = paused ? "En pause" : "J'écoute · " + fmt(elapsed()); }, 500);
   try { if ("wakeLock" in navigator) wake = await navigator.wakeLock.request("screen"); } catch (e) {}
@@ -604,7 +680,7 @@ function stopAll() {
   try { rec && rec.stop(); } catch (e) {} showInterim("");
   $("go").hidden = false; $("go").textContent = "Reprendre l'écoute"; $("pause").hidden = true; $("stop").hidden = true; $("veille").hidden = true; $("prep").hidden = false;
   $("pause").textContent = "Pause"; $("etat").textContent = segs.length ? "Arrêté · texte gardé" : "Prêt"; $("mode").classList.remove("live");
-  try { wake && wake.release(); } catch (e) {} wake = null; closeBoost(); save();
+  try { wake && wake.release(); } catch (e) {} wake = null; closeBoost(); gClose(); save();
   if (segs.length) openFin();
 }
 $("accord").addEventListener("change", () => { $("go").disabled = !$("accord").checked; });
@@ -987,6 +1063,7 @@ if (!("documentPictureInPicture" in window)) { $("pip-btn").hidden = true; $("au
 try { const v = localStorage.getItem("ni-auto-pip"); if (v !== null) $("auto-pip").checked = v === "1"; } catch (e) {}
 try { const m = localStorage.getItem("ni-engine"); if (m) $("engine-mode").value = m; } catch (e) {}
 $("engine-mode").addEventListener("change", () => { try { localStorage.setItem("ni-engine", $("engine-mode").value); } catch (e) {} });
+gShowKey();
 $("auto-pip").addEventListener("change", () => { try { localStorage.setItem("ni-auto-pip", $("auto-pip").checked ? "1" : "0"); } catch (e) {} });
 if (!SR) { setMode("off", "Non disponible"); note("Ce navigateur ne sait pas transcrire. Ouvre cette page dans Google Chrome ou Microsoft Edge.", "err"); }
 else if (typeof SR.available === "function") {

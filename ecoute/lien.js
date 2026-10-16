@@ -32,7 +32,9 @@
       etat("cloud", "Connexion à l'ordinateur…");
       conn = peer.connect(target, {reliable: true});
       conn.on("open", () => { etat("local live", "Relié à l'ordinateur"); conn.send({type: "hello", total: A.count()}); });
-      conn.on("data", d => { if (d && d.type === "ack") { sent = Math.min(d.n, A.count()); flush(); } });
+      conn.on("data", d => { if (!d) return;
+        if (d.type === "ack") { sent = Math.min(d.n, A.count()); flush(); }
+        else if (d.type === "config" && d.gkey && A.setGladia) { A.setGladia(d.gkey); A.note("Ce téléphone utilise maintenant Gladia (clé reçue de l'ordinateur).", "ok"); } });
       conn.on("close", () => { etat("off", "Lien coupé · je réessaie"); retry = setTimeout(connect, 3000); });
       conn.on("error", fail);
     };
@@ -65,7 +67,8 @@
     });
     peer.on("connection", conn => {
       if (!A.count()) { got = 0; saveGot(); }   // cours effacé sur l'ordinateur : on repart de zéro
-      conn.on("open", () => { live = true; etat("local live", "Téléphone relié · le cours arrive"); $("lien-qr").hidden = true; A.wake(); conn.send({type: "ack", n: got}); });
+      conn.on("open", () => { live = true; etat("local live", "Téléphone relié · le cours arrive"); $("lien-qr").hidden = true; A.wake(); conn.send({type: "ack", n: got});
+        const k = A.gladiaKey && A.gladiaKey(); if (k && $("engine-mode").value === "gladia") conn.send({type: "config", gkey: k}); });
       conn.on("data", d => {
         if (!d) return;
         if (d.type === "hello") { if (typeof d.total === "number" && d.total < got) { got = 0; saveGot(); } conn.send({type: "ack", n: got}); }
