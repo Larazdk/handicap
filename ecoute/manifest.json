@@ -1,1 +1,1 @@
-{"name": "Écoute · Notes Inclusives", "short_name": "Écoute", "start_url": "./", "display": "standalone", "background_color": "#F4F6FA", "theme_color": "#2C3E9E", "lang": "fr", "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}], "scope": "./"}
+{"name": "Écoute · Alto", "short_name": "Alto", "start_url": "./", "display": "standalone", "background_color": "#FCFAF6", "theme_color": "#3B2557", "lang": "fr", "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}], "scope": "./"}

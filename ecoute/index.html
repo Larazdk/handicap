@@ -3,45 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Écoute · Notes Inclusives</title>
+<title>Écoute · Alto</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<meta name="theme-color" content="#2C3E9E">
+<meta name="theme-color" content="#3B2557">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&display=swap">
 <style>
 /* Une colonne : le cours (texte + questions). Les notes restent dans le logiciel de l élève (Word, OneNote) ; le cours se place dans une fenêtre à côté. */
 :root{
-  --ink:#2C3E9E; --ink-d:#1D2A6E; --hl:rgba(246,224,94,.55);
-  --bg:#F4F6FA; --card:#FFFFFF; --fg:#1B2033; --muted:#4E566B; --line:#DCE1EA; --tint:#E8ECF8;
-  --good:#1E6B34; --good-bg:#E6F4EA; --bad:#A3321F; --bad-bg:#FBE9E5; --warn:#8A5A00; --warn-bg:#FFF4D6;
-  --f-title:'Andika','Atkinson Hyperlegible',system-ui,sans-serif;
-  --f-body:'Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif;
-  --size:20px; --left:58%; color-scheme:light;
+  /* Alto : prune, lilas, crème. Titres Fraunces, texte Arial. */
+  --ink:#3B2557; --ink-d:#2A1A40; --lilas:#7C5CD6; --hl:#FFD84D;
+  --bg:#FCFAF6; --side:#F4F0FD; --card:#FFFFFF; --fg:#251B33; --muted:#4A4258; --line:#C9BFB0; --tint:#E4DBFF;
+  --good:#0F4426; --good-bg:#D3F0DE; --bad:#7A2C00; --bad-bg:#FFE0CC; --warn:#5C4300; --warn-bg:#FFF0B0;
+  --dif:#C9B6FF; --rate:#FFB08A;
+  --f-title:'Fraunces',Georgia,serif;
+  --f-body:Arial,'Helvetica Neue',Helvetica,sans-serif;
+  --size:20px; --lh:1.6; --left:58%; color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
-  --ink:#9DB0FF; --ink-d:#C5D0FF; --hl:rgba(246,224,94,.3);
-  --bg:#12162A; --card:#1B2038; --fg:#EDEFF7; --muted:#AEB5CB; --line:#323A5C; --tint:#252C4D;
-  --good:#7FD69A; --good-bg:#16351F; --bad:#FF9C88; --bad-bg:#3D1C16; --warn:#F3C969; --warn-bg:#3A2E10;
+  --ink:#C9B6FF; --ink-d:#E4DBFF; --lilas:#B9A3F2; --hl:#B8901A;
+  --bg:#17111F; --side:#211830; --card:#251B33; --fg:#F4F0FD; --muted:#C2B8D2; --line:#463A58; --tint:#352650;
+  --good:#9EE0B4; --good-bg:#123321; --bad:#FFB08A; --bad-bg:#3D2214; --warn:#FFD84D; --warn-bg:#3A2E10;
+  --dif:#5B34D6; --rate:#8A3A12;
   color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;background:var(--bg)}
 body{color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.5;padding:16px 16px 24px}
 p{margin:0}
-h1{font-family:var(--f-title);font-size:26px;margin:0;width:fit-content;background-image:linear-gradient(transparent 62%,var(--hl) 62%);padding:0 4px;margin-left:-4px}
-h2{font-family:var(--f-title);font-size:19px;margin:0}
+h1{font-family:var(--f-title);font-weight:600;font-size:28px;margin:0;color:var(--ink);display:flex;align-items:center;gap:10px}
+h1 .sep{color:var(--muted);font-weight:500}
+.brand svg{width:40px;height:40px;flex:none}
+h2{font-family:var(--f-title);font-weight:600;font-size:20px;margin:0;color:var(--ink)}
 .muted{color:var(--muted);font-size:15px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:10px}
 label{font-weight:700}
 input[type=text],input[type=password],select,textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
 input[type=text],input[type=password]{flex:1 1 200px;min-width:0}
 input[type=checkbox]{width:24px;height:24px;accent-color:var(--ink)}
-button{font:inherit;font-weight:700;border-radius:12px;padding:8px 14px;min-height:46px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
-button.primary{background:var(--ink);border-color:var(--ink);color:var(--card)}
+button{font:inherit;font-weight:700;border-radius:999px;padding:8px 14px;min-height:46px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+button.primary{background:var(--ink);border-color:var(--ink);color:#FFFFFF}
 button.stop{background:var(--bad-bg);border-color:var(--bad)}
-button.ask{background:var(--hl);border-color:var(--warn)}
+button.ask{background:var(--ink);border-color:var(--ink);color:#FFFFFF}
+button.m-imp{background:var(--hl);border-color:var(--hl);color:#1E1A10}
+button.m-dif{background:var(--dif);border-color:var(--dif);color:var(--ink-d)}
+button.m-rate{background:var(--rate);border-color:var(--rate);color:#1E1208}
 button.on{background:var(--tint);border-color:var(--ink);color:var(--ink-d)}
 button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:3px solid var(--ink);outline-offset:2px}
@@ -71,7 +79,7 @@ body.compact #texte{height:55vh}
 #live{display:flex;flex-direction:column;gap:10px;min-width:0;height:100%}
 .livebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .state{font-family:var(--f-title);font-size:18px;font-variant-numeric:tabular-nums}
-#texte{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:var(--size);line-height:1.7;min-height:220px;height:46vh;overflow-y:auto;resize:vertical}
+#texte{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;font-size:var(--size);line-height:var(--lh);min-height:220px;height:46vh;overflow-y:auto;resize:vertical}
 .pip #texte{height:auto;flex:1 1 auto;min-height:120px;resize:none}
 .seg{display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:8px;padding:3px 4px;border-radius:6px;cursor:pointer}
 .seg:hover{background:var(--tint)}
@@ -79,7 +87,7 @@ body.compact #texte{height:55vh}
 .seg.flash{background:var(--hl)}
 .seg.sel{background:var(--hl);outline:2px solid var(--warn)}
 .tag{font-size:.62em;font-weight:700;padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:6px}
-.tag.imp{background:var(--hl)} .tag.dif{background:var(--bad-bg);color:var(--bad)} .tag.q{background:var(--tint);color:var(--ink-d)}
+.tag.imp{background:var(--hl);color:#1E1A10} .tag.dif{background:var(--dif);color:var(--ink-d)} .tag.q{background:var(--tint);color:var(--ink-d)}
 .interim{color:var(--muted);font-style:italic}
 .empty{color:var(--muted);font-size:17px}
 .marks{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px}
@@ -87,10 +95,10 @@ body.compact #texte{height:55vh}
 .pip .marks{grid-template-columns:1fr 1fr}
 
 /* Questions */
-#qpanel{background:var(--card);border:2px solid var(--ink);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:44vh;overflow-y:auto}
+#qpanel{background:var(--card);border:2px solid var(--lilas);border-radius:24px;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:44vh;overflow-y:auto}
 .pip #qpanel{max-height:50vh}
 .quote{font-size:15px;padding:8px 10px;border-radius:8px;background:var(--hl);max-height:6.5em;overflow:auto}
-.answer{font-size:calc(var(--size) - 2px);line-height:1.6;white-space:pre-wrap}
+.answer{font-size:calc(var(--size) - 2px);line-height:var(--lh);white-space:pre-wrap}
 .answer .who{display:block;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:6px}
 .followups{display:flex;flex-wrap:wrap;gap:6px}
 .followups button{min-height:40px;padding:6px 12px;font-size:15px}
@@ -100,11 +108,11 @@ body.compact #texte{height:55vh}
 
 /* Notes */
 #notes-col{display:flex;flex-direction:column;gap:8px;min-width:0}
-#notes{flex:1 1 auto;min-height:46vh;width:100%;resize:vertical;font-size:var(--size);line-height:1.7}
+#notes{flex:1 1 auto;min-height:46vh;width:100%;resize:vertical;font-size:var(--size);line-height:var(--lh)}
 .pipnote{display:none}
 .main.inpip .pipnote{display:block}
 details.settings summary{cursor:pointer;font-weight:700}
-h3{font-family:var(--f-title);font-size:17px;margin:6px 0 0}
+h3{font-family:var(--f-title);font-weight:600;color:var(--ink);font-size:18px;margin:6px 0 0}
 .stack{display:flex;flex-direction:column;gap:8px}
 #fin{border:2px solid var(--ink)}
 #selbar{position:fixed;z-index:50;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:var(--card);border:2px solid var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25);width:min(420px,calc(100vw - 16px))}
@@ -127,7 +135,7 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
 <body>
 <div class="top">
   <div class="row" style="justify-content:space-between">
-    <h1>Écoute</h1>
+    <h1 class="brand"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Écoute</span></h1>
     <div class="row">
       <span class="chip" id="mode"><span class="dot"></span><span id="mode-t">Vérification…</span></span>
       <span class="chip" id="ia-chip">Réponses : …</span>
@@ -205,9 +213,9 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
 
       <div class="marks">
         <button class="ask" id="nc">Je ne comprends pas</button>
-        <button id="rate">J'ai raté</button>
-        <button id="imp">Important</button>
-        <button id="dif">Difficile</button>
+        <button class="m-rate" id="rate">J'ai raté</button>
+        <button class="m-imp" id="imp">Important</button>
+        <button class="m-dif" id="dif">Difficile</button>
       </div>
 
       <section id="qpanel" hidden aria-live="polite">
@@ -231,6 +239,10 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
       <div class="row">
         <button id="moins" aria-label="Texte plus petit">A−</button>
         <button id="plus" aria-label="Texte plus grand">A+</button>
+        <span class="muted">Interligne</span>
+        <button id="lh-n" class="on" aria-pressed="true">Normal</button>
+        <button id="lh-l" aria-pressed="false">Large</button>
+        <button id="lh-xl" aria-pressed="false">Très large</button>
         <span class="muted" id="compteur">0 mot</span>
         <span class="muted" id="info"></span>
       </div>
@@ -378,7 +390,7 @@ async function chooseEngine() {
     } catch (e) { local = false; }
   }
   if (local) { setMode("local", "Écoute sur l'appareil"); note(""); }
-  else { setMode("cloud", "Écoute en ligne (Google)"); note("Le son passe par Google pour être changé en texte. Notes Inclusives ne le garde pas. À utiliser pour un test, avec l'accord du prof.", "warn"); }
+  else { setMode("cloud", "Écoute en ligne (Google)"); note("Le son passe par Google pour être changé en texte. Alto ne le garde pas. À utiliser pour un test, avec l'accord du prof.", "warn"); }
   return true;
 }
 function makeRec() {
@@ -738,6 +750,16 @@ let size = 20;
 const setSize = v => { size = Math.min(34, Math.max(15, v)); document.documentElement.style.setProperty("--size", size + "px"); if (pipWin) pipWin.document.documentElement.style.setProperty("--size", size + "px"); };
 $("moins").addEventListener("click", () => setSize(size - 2));
 $("plus").addEventListener("click", () => setSize(size + 2));
+/* Interligne réglable (pour les dys) : gardé sur cet appareil */
+const LH = {"lh-n": 1.6, "lh-l": 2, "lh-xl": 2.5};
+function setLh(id) {
+  const v = LH[id] || 1.6;
+  [document, pipWin && pipWin.document].forEach(d => d && d.documentElement.style.setProperty("--lh", v));
+  Object.keys(LH).forEach(k => { const b = $(k); if (b) { b.classList.toggle("on", k === id); b.setAttribute("aria-pressed", k === id); } });
+  try { localStorage.setItem("alto-interligne", id); } catch (e) {}
+}
+Object.keys(LH).forEach(k => $(k).addEventListener("click", () => setLh(k)));
+try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { setLh("lh-n"); }
 function asText() {
   const head = `${$("matiere").value || "Cours"} — ${new Date().toLocaleDateString("fr-FR")}\n(Transcription automatique : à relire. Le son n'a pas été enregistré.)\n\n`;
   const body = segs.map(s => `[${fmt(s.t)}] ${s.fix || s.text}${s.imp ? "  [IMPORTANT]" : ""}${s.dif ? "  [DIFFICILE]" : ""}${s.q ? "  [QUESTION]" : ""}`).join("\n");
@@ -855,7 +877,7 @@ function wordDoc() {
   const outs = Object.keys(MAKE).filter(k => outputs[k]).map(k => `<h2>${MAKE[k].title}</h2><p style="color:#6B7280;font-size:9pt">Créé par l'IA, à vérifier avec le cours.</p>` + outputs[k].split("\n").filter(l => l.trim()).map(l => `<p>${esc(l)}</p>`).join("")).join("");
   const qs = questions.length ? "<h2>Mes questions</h2>" + questions.map(q => `<p><b>« ${esc(q.passage)} »</b>${q.question ? "<br>Question : " + esc(q.question) : ""}</p>` + q.turns.filter(t => t.role === "assistant").map(t => `<p style="margin-left:18pt">→ ${esc(t.content)}</p>`).join("") + `<p style="color:#6B7280">${q.compris ? "Compris" : "À revoir"}</p>`).join("") : "";
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<style>body{font-family:'Atkinson Hyperlegible',Verdana,Arial,sans-serif;font-size:13pt;line-height:1.6}h1{font-size:20pt;color:#2C3E9E}h2{font-size:15pt;color:#2C3E9E;margin-top:18pt}p{margin:0 0 6pt}</style></head><body>
+<style>body{font-family:Arial,Helvetica,sans-serif;font-size:13pt;line-height:1.6}h1{font-size:20pt;color:#3B2557;font-family:Georgia,serif}h2{font-size:15pt;color:#3B2557;font-family:Georgia,serif;margin-top:18pt}p{margin:0 0 6pt}</style></head><body>
 <h1>${esc(title)}</h1><p>${esc(date)}</p><p style="color:#6B7280;font-size:10pt">Transcription automatique, à relire. Le son n'a pas été enregistré. Les phrases corrigées remplacent l'original dans ce document.</p>
 ${outs}<h2>Le cours</h2>${para}${qs}</body></html>`;
 }
