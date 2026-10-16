@@ -30,15 +30,15 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;background:var(--bg)}
-body{color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.5;padding:16px 16px 24px}
+body{color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.5;padding:24px 20px 32px}
 p{margin:0}
 h1{font-family:var(--f-title);font-weight:600;font-size:28px;margin:0;color:var(--ink);display:flex;align-items:center;gap:10px}
 h1 .sep{color:var(--muted);font-weight:500}
 .brand svg{width:40px;height:40px;flex:none}
 h2{font-family:var(--f-title);font-weight:600;font-size:20px;margin:0;color:var(--ink)}
 .muted{color:var(--muted);font-size:15px}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px 22px;display:flex;flex-direction:column;gap:14px}
 label{font-weight:700}
 input[type=text],input[type=password],select,textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
 input[type=text],input[type=password]{flex:1 1 200px;min-width:0}
@@ -64,10 +64,10 @@ button:disabled{opacity:.5;cursor:default}
 .msg{border-radius:10px;padding:10px 14px;font-size:15px}
 .msg.warn{background:var(--warn-bg)} .msg.err{background:var(--bad-bg)} .msg.ok{background:var(--good-bg)}
 
-.top{display:flex;flex-direction:column;gap:12px;max-width:900px;margin:0 auto 12px}
+.top{display:flex;flex-direction:column;gap:16px;max-width:900px;margin:0 auto 20px}
 body.compact .top > p, body.compact #place, body.compact #reprise{display:none}
 body.compact #texte{height:55vh}
-.main{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.main{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 .main.solo{grid-template-columns:minmax(0,1fr)}
 .main.solo #split,.main.solo #notes-col{display:none}
 #split{cursor:col-resize;display:flex;align-items:center;justify-content:center;touch-action:none}
@@ -76,21 +76,28 @@ body.compact #texte{height:55vh}
 @media (max-width:820px){.main{grid-template-columns:minmax(0,1fr)} #split{display:none} #notes-col{margin-top:12px}}
 
 /* Le panneau du cours (peut être déplacé dans la fenêtre flottante) */
-#live{display:flex;flex-direction:column;gap:10px;min-width:0;height:100%}
+#live{display:flex;flex-direction:column;gap:14px;min-width:0;height:100%}
 .livebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .state{font-family:var(--f-title);font-size:18px;font-variant-numeric:tabular-nums}
-#texte{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;font-size:var(--size);line-height:var(--lh);min-height:220px;height:46vh;overflow-y:auto;resize:vertical}
+#texte{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:22px 26px;font-size:var(--size);line-height:var(--lh);min-height:220px;height:40vh;overflow-y:auto;resize:vertical}
 .pip #texte{height:auto;flex:1 1 auto;min-height:120px;resize:none}
-.seg{display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:8px;padding:3px 4px;border-radius:6px;cursor:pointer}
+.seg{display:grid;grid-template-columns:3em minmax(0,1fr);gap:14px;padding:6px 10px;margin:0 -10px 4px;border-radius:12px;cursor:pointer}
 .seg:hover{background:var(--tint)}
 .seg time{color:var(--muted);font-size:.68em;padding-top:.35em;font-variant-numeric:tabular-nums}
 .seg.flash{background:var(--hl)}
 .seg.sel{background:var(--hl);outline:2px solid var(--warn)}
-.tag{font-size:.62em;font-weight:700;padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:6px}
+.tag{font-size:.62em;font-weight:700;padding:3px 10px;border-radius:999px;vertical-align:middle;margin-left:10px;white-space:nowrap}
 .tag.imp{background:var(--hl);color:#1E1A10} .tag.dif{background:var(--dif);color:var(--ink-d)} .tag.q{background:var(--tint);color:var(--ink-d)}
 .interim{color:var(--muted);font-style:italic}
 .empty{color:var(--muted);font-size:17px}
-.marks{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px}
+.marks{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px}
+.tools{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.group{display:flex;align-items:center;gap:6px}
+.group > .muted{margin-right:4px}
+.seg2{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--side);border:1px solid var(--line)}
+.seg2 button{min-height:40px;border:0;background:transparent;padding:6px 16px}
+.seg2 button.on{background:var(--ink);color:#FFFFFF}
+.tools .count{margin-left:auto}
 @media (max-width:520px){.marks{grid-template-columns:1fr 1fr}}
 .pip .marks{grid-template-columns:1fr 1fr}
 
@@ -236,16 +243,18 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
         <p class="muted" id="qstatus"></p>
       </section>
 
-      <div class="row">
-        <button id="moins" aria-label="Texte plus petit">A−</button>
-        <button id="plus" aria-label="Texte plus grand">A+</button>
-        <span class="muted">Interligne</span>
-        <button id="lh-n" class="on" aria-pressed="true">Normal</button>
-        <button id="lh-l" aria-pressed="false">Large</button>
-        <button id="lh-xl" aria-pressed="false">Très large</button>
-        <span class="muted" id="compteur">0 mot</span>
-        <span class="muted" id="info"></span>
+      <div class="tools">
+        <div class="group"><span class="muted">Taille</span>
+          <button id="moins" aria-label="Texte plus petit">A−</button>
+          <button id="plus" aria-label="Texte plus grand">A+</button></div>
+        <div class="group"><span class="muted">Interligne</span>
+          <span class="seg2" role="group" aria-label="Interligne">
+            <button id="lh-n" class="on" aria-pressed="true">Normal</button>
+            <button id="lh-l" aria-pressed="false">Large</button>
+            <button id="lh-xl" aria-pressed="false">Très large</button></span></div>
+        <span class="muted count" id="compteur">0 mot</span>
       </div>
+      <p class="muted" id="info"></p>
     </section>
     <p class="msg ok pipnote">Le cours est dans la fenêtre flottante. Ferme-la pour le remettre ici.</p>
   </div>
