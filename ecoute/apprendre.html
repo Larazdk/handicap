@@ -40,7 +40,7 @@ h3{font-family:var(--f-title);font-weight:600;font-size:19px;margin:0;color:var(
 .wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 .row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
 .card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px 22px;display:flex;flex-direction:column;gap:14px}
-button,a.btn{font:inherit;font-weight:700;border-radius:999px;padding:8px 18px;min-height:46px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+button,a.btn,label.btn{font:inherit;font-weight:700;border-radius:999px;padding:8px 18px;min-height:46px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 button.primary{background:var(--ink);border-color:var(--ink);color:#FFFFFF}
 button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:3px solid var(--lilas);outline-offset:2px}
@@ -76,6 +76,10 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 .nrow:first-child{border-top:0}
 .nrow .t{font-size:18px;line-height:1.5}
 .nrow .when{font-size:14px;color:var(--muted)}
+.reader{font-size:calc(var(--size) - 4px);line-height:var(--lh);max-height:60vh;overflow:auto;padding:16px 18px;border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;gap:12px}
+.sent{cursor:pointer;border-radius:6px;padding:2px 1px}
+.sent:hover{background:var(--side)}
+.sent.on{background:var(--hl);color:#1E1A10}
 .editor{font-size:var(--size);line-height:2.1;padding:16px;border:1px dashed var(--line);border-radius:16px}
 .w{cursor:pointer;border-radius:6px;padding:2px 2px}
 .w:hover{background:var(--side)}
@@ -160,6 +164,21 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 
   <!-- ===== Mes notions ===== -->
   <section id="tab-notions" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card" id="imp-card">
+      <h2>Importer un cours</h2>
+      <p class="muted">Pour un cours pris sans Écoute : un fichier Word, PDF ou texte, ou un texte copié. Rien n'est envoyé : le fichier est lu sur cet appareil.</p>
+      <div class="row"><label for="imp-mat"><b>Matière</b></label><input type="text" id="imp-mat" placeholder="Par exemple : Droit civil" style="flex:1 1 220px"></div>
+      <div class="row"><label class="btn" for="imp-file" tabindex="0">Choisir un fichier (Word, PDF, texte)</label><input type="file" id="imp-file" accept=".docx,.pdf,.txt,.md,text/plain" hidden><span class="muted" id="imp-file-t"></span></div>
+      <textarea id="imp-text" placeholder="Ou colle ton cours ici"></textarea>
+      <div class="row"><button class="primary" id="imp-read">Lire le cours</button></div>
+    </div>
+    <div class="card" id="pick-card" hidden>
+      <h2>Surligne ce que tu veux apprendre</h2>
+      <p class="muted">Touche une phrase pour la surligner en jaune. Chaque phrase surlignée devient une notion. Les définitions sont déjà proposées.</p>
+      <div class="tools"><button id="pick-auto">Proposer les définitions</button><button id="pick-none">Tout enlever</button><span class="muted" id="pick-n"></span></div>
+      <div class="reader" id="reader"></div>
+      <div class="row"><button class="primary" id="pick-go">Créer les notions</button><button id="pick-x">Annuler</button></div>
+    </div>
     <div class="card">
       <h2>Ajouter des notions</h2>
       <div class="row"><button class="primary" id="import">Prendre les passages marqués dans Écoute</button><span class="muted" id="import-info"></span></div>
@@ -209,8 +228,14 @@ if (db.day !== today()) { db.day = today(); db.newToday = 0; save(); }
 const uid = () => Math.random().toString(36).slice(2, 10);
 const tokens = text => text.split(/(\s+)/);                  // mots et espaces, dans l'ordre
 const clean = w => w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").replace(/^(l|d|qu|n|s|c|j)['’]/, "");
+const VERBS = new Set(["est", "sont", "désigne", "désignent", "signifie", "correspond", "consiste", "représente", "définit"]);
 function autoHoles(text) {
   const t = tokens(text), cand = [];
+  const v = t.findIndex((w, i) => i > 0 && i < 20 && VERBS.has(clean(w)));
+  if (v > 0) {                                     // « L'usus est le droit… » : on cache « usus »
+    const term = []; for (let i = 0; i < v; i++) { const c = clean(t[i]); if (c.length >= 3 && !STOP.has(c)) term.push(i); }
+    if (term.length >= 1 && term.length <= 3) return term;
+  }
   t.forEach((w, i) => { const c = clean(w); if (i > 0 && c.length >= 5 && !STOP.has(c)) cand.push([c.length, i]); });
   cand.sort((a, b) => b[0] - a[0]);
   const n = text.split(/\s+/).length > 14 ? 2 : 1;
@@ -285,7 +310,7 @@ function holeHTML(n, show) {
   const box = document.createDocumentFragment();
   t.forEach((w, i) => {
     if (!set.has(i)) { box.append(w); return; }
-    const m = w.match(/^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u) || ["", "", w, ""];
+    const m = w.match(/^([^\p{L}\p{N}]*(?:(?:[lLdDjJnNsScCmMtT]|[qQ]u)['’])?)(.*?)([^\p{L}\p{N}]*)$/u) || ["", "", w, ""];
     box.append(m[1]);
     const s = document.createElement("span");
     if (show) { s.className = "ans"; s.textContent = m[2]; }
@@ -401,6 +426,82 @@ $("import").addEventListener("click", () => {
   });
   save(); renderList(); renderToday();
   $("import-info").textContent = added ? `${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}.` : "Rien de nouveau : marque des passages « Important » ou « Difficile » pendant le cours.";
+});
+
+/* ---------- Importer un cours (Word, PDF, texte) ---------- */
+const loadScript = src => new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.append(s); });
+async function readFile(f) {
+  const name = f.name.toLowerCase();
+  if (name.endsWith(".docx")) {
+    if (typeof mammoth === "undefined") await loadScript("lib/mammoth.browser.min.js");
+    return (await mammoth.extractRawText({arrayBuffer: await f.arrayBuffer()})).value;
+  }
+  if (name.endsWith(".pdf")) {
+    const pdfjs = await import("./lib/pdf.min.mjs");
+    pdfjs.GlobalWorkerOptions.workerSrc = "lib/pdf.worker.min.mjs";
+    const doc = await pdfjs.getDocument({data: new Uint8Array(await f.arrayBuffer())}).promise;
+    let out = "";
+    for (let p = 1; p <= doc.numPages; p++) {
+      const c = await (await doc.getPage(p)).getTextContent();
+      c.items.forEach(it => { out += it.str + (it.hasEOL ? "\n" : ""); }); out += "\n\n";
+    }
+    return out;
+  }
+  if (name.endsWith(".doc")) throw new Error("ancien format Word");
+  return await f.text();
+}
+$("imp-file").addEventListener("change", async () => {
+  const f = $("imp-file").files[0]; if (!f) return;
+  $("imp-file-t").textContent = "Lecture de « " + f.name + " »…";
+  try {
+    const t = await readFile(f);
+    $("imp-text").value = t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (!$("imp-mat").value) $("imp-mat").value = f.name.replace(/\.[^.]+$/, "");
+    $("imp-file-t").textContent = "« " + f.name + " » est lu. Vérifie le texte, puis appuie sur « Lire le cours ».";
+  } catch (e) {
+    $("imp-file-t").textContent = (e.message === "ancien format Word" ? "Ce fichier Word est trop ancien (.doc). Enregistre-le en .docx dans Word, puis réessaie." : "Ce fichier n'a pas pu être lu. Copie le texte du cours et colle-le dans la case.");
+  }
+  $("imp-file").value = "";
+});
+$("imp-file").previousElementSibling.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("imp-file").click(); } });
+const DEF = /\b(est|sont|désigne|désignent|signifie|correspond|consiste|représente|on appelle|se définit|c'est)\b|\s:\s/i;
+let picks = [];
+function splitSentences(text) {
+  return text.split(/\n\s*\n|\n(?=[-•*\d]+[.)]?\s)/).map(p => p.replace(/\s*\n\s*/g, " ").trim()).filter(Boolean)
+    .map(p => (p.match(/[^.!?…]+(?:[.!?…]+|$)/g) || [p]).map(x => x.trim()).filter(Boolean));
+}
+$("imp-read").addEventListener("click", () => {
+  const text = $("imp-text").value.trim();
+  if (text.split(/\s+/).length < 5) { note("Colle un cours ou choisis un fichier d'abord.", "warn"); return; }
+  picks = []; const box = $("reader"); box.replaceChildren();
+  splitSentences(text).forEach(par => {
+    const p = document.createElement("p");
+    par.forEach(sen => {
+      const words = sen.split(/\s+/).length;
+      const s = document.createElement("span"); s.textContent = sen + " ";
+      if (words >= 4 && words <= 60) {
+        const item = {text: sen, el: s, on: false}; picks.push(item);
+        s.className = "sent"; s.tabIndex = 0; s.setAttribute("role", "button");
+        const tog = () => { item.on = !item.on; s.classList.toggle("on", item.on); countPicks(); };
+        s.addEventListener("click", tog); s.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tog(); } });
+      }
+      p.append(s);
+    });
+    box.append(p);
+  });
+  autoPick(); $("pick-card").hidden = false; $("pick-card").scrollIntoView({block: "start", behavior: "smooth"});
+});
+function countPicks() { const n = picks.filter(x => x.on).length; $("pick-n").textContent = `${n} phrase${n > 1 ? "s" : ""} surlignée${n > 1 ? "s" : ""}`; $("pick-go").textContent = n ? `Créer ${n} notion${n > 1 ? "s" : ""}` : "Créer les notions"; }
+function autoPick() { picks.forEach(x => { const w = x.text.split(/\s+/).length; x.on = DEF.test(x.text) && w <= 40; x.el.classList.toggle("on", x.on); }); countPicks(); }
+$("pick-auto").addEventListener("click", autoPick);
+$("pick-none").addEventListener("click", () => { picks.forEach(x => { x.on = false; x.el.classList.remove("on"); }); countPicks(); });
+$("pick-x").addEventListener("click", () => { $("pick-card").hidden = true; });
+$("pick-go").addEventListener("click", () => {
+  const chosen = picks.filter(x => x.on); if (!chosen.length) { note("Surligne au moins une phrase.", "warn"); return; }
+  const have = new Set(db.notions.map(n => n.text)); const src = ($("imp-mat").value.trim() || "Cours importé") + " · " + new Date().toLocaleDateString("fr-FR");
+  let added = 0; chosen.forEach(x => { if (have.has(x.text)) return; db.notions.push(makeNotion(x.text, "imp", src)); have.add(x.text); added++; });
+  save(); renderList(); renderToday(); $("pick-card").hidden = true; $("imp-text").value = "";
+  note(`${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}. Elles sont dans ta révision du jour.`, "ok");
 });
 
 /* ---------- Imprimer ---------- */
