@@ -151,6 +151,24 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
   <p class="muted">Pose cet appareil près du prof. Le cours s'écrit en direct. <b>Le son n'est jamais enregistré</b> : seul le texte est gardé, sur cet appareil.</p>
   <div id="reprise" class="msg warn" hidden></div>
 
+  <section class="card" id="lien">
+    <h2>Le téléphone près du prof, le cours sur l'ordinateur</h2>
+    <p class="muted" id="lien-intro">Pose ton téléphone près du prof : il entend beaucoup mieux. Il écrit le cours et l'envoie ici en direct. Le son n'est jamais envoyé, seulement le texte.</p>
+    <div class="row">
+      <button class="primary" id="lien-go">Relier mon téléphone</button>
+      <span class="chip" id="lien-etat" hidden><span class="dot"></span><span id="lien-etat-t"></span></span>
+    </div>
+    <div id="lien-qr" class="row" hidden style="align-items:flex-start;gap:20px">
+      <div id="qr" style="background:#FFFFFF;padding:12px;border-radius:16px;line-height:0"></div>
+      <div class="stack" style="flex:1 1 240px">
+        <p><b>1.</b> Ouvre l'appareil photo du téléphone et vise ce code.</p>
+        <p><b>2.</b> Ouvre le lien dans Chrome.</p>
+        <p><b>3.</b> Sur le téléphone, coche l'accord du prof et appuie sur « Autoriser et démarrer ».</p>
+        <p class="muted">Le code ne change pas : tu peux le rescanner à chaque cours. Si ça ne se relie pas, mets les deux appareils sur le même Wi-Fi.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="card" id="prep">
     <div class="row">
       <label for="matiere">Cours</label>
@@ -331,6 +349,9 @@ let questions = [];     // {t, passage, turns:[{role, content}], compris}
 let interimEl = null, selIdx = null, pipWin = null;
 let outputs = {};       // versions créées par l'IA, à côté de l'original
 
+/* Petit pont pour lien.js (téléphone → ordinateur) */
+const api = window.AltoEcoute = {onSeg: null, onInterim: null};
+
 /* ---------- Petits outils ---------- */
 const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); const m = Math.floor(s / 60); const h = Math.floor(m / 60);
   return h ? `${h}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`; };
@@ -363,6 +384,7 @@ function addFinal(text) {
   text = text.trim(); if (!text) return;
   text = text.charAt(0).toUpperCase() + text.slice(1);
   const stick = nearBottom(); const s = {t: elapsed(), text}; segs.push(s);
+  try { api.onSeg && api.onSeg(s, segs.length - 1); } catch (e) {}
   const box = $("texte"); const e = box.querySelector(".empty"); if (e) e.remove();
   if (interimEl) { interimEl.remove(); interimEl = null; }
   box.append(segEl(s, segs.length - 1));
@@ -370,6 +392,7 @@ function addFinal(text) {
   updateCount(); save();
 }
 function showInterim(text) {
+  try { api.onInterim && api.onInterim(text); } catch (e) {}
   const box = $("texte"); const stick = nearBottom();
   if (!text) { if (interimEl) { interimEl.remove(); interimEl = null; } return; }
   if (!interimEl) { interimEl = mk("p", "interim"); box.append(interimEl); }
@@ -971,9 +994,28 @@ else if (typeof SR.available === "function") {
     .then(st => st === "available" ? setMode("local", "Écoute sur l'appareil") : setMode("cloud", "Écoute en ligne (Google)"))
     .catch(() => setMode("cloud", "Écoute en ligne (Google)"));
 } else setMode("cloud", "Écoute en ligne (Google)");
+/* Texte reçu du téléphone : ajouté comme si l'ordinateur l'avait entendu */
+api.addRemote = (text, t) => {
+  const stick = nearBottom(); const s = {t, text}; segs.push(s);
+  const box = $("texte"); const e = box.querySelector(".empty"); if (e) e.remove();
+  if (interimEl) { interimEl.remove(); interimEl = null; }
+  box.append(segEl(s, segs.length - 1)); if (stick) box.scrollTop = box.scrollHeight;
+  updateCount(); save(); $("etat").textContent = "Le téléphone écoute · " + fmt(t);
+};
+api.remoteInterim = text => { const box = $("texte"); const stick = nearBottom();
+  if (!text) { if (interimEl) { interimEl.remove(); interimEl = null; } return; }
+  if (!interimEl) { interimEl = mk("p", "interim"); box.append(interimEl); }
+  interimEl.textContent = text + " …"; if (stick) box.scrollTop = box.scrollHeight; };
+api.count = () => segs.length;
+api.seg = i => segs[i];
+api.note = note; api.info = info;
+api.wake = async () => { try { if ("wakeLock" in navigator && !wake) wake = await navigator.wakeLock.request("screen"); } catch (e) {} };
 detectEngine();
 document.addEventListener("visibilitychange", async () => { if (document.visibilityState === "visible" && running && !wake) { try { wake = await navigator.wakeLock.request("screen"); } catch (e) {} } });
 })();
 </script>
+<script src="lib/peerjs.min.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="lien.js"></script>
 </body>
 </html>
