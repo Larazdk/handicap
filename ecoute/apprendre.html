@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Apprendre · Alto</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#3B2557">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&display=swap">
+<style>
+/* Alto · Apprendre : les cartes de mémoire et la révision du jour.
+   Les notions viennent des passages marqués dans Écoute. Tout reste sur cet appareil. */
+:root{
+  --ink:#3B2557; --ink-d:#2A1A40; --lilas:#7C5CD6; --hl:#FFD84D;
+  --bg:#FCFAF6; --side:#F4F0FD; --card:#FFFFFF; --fg:#251B33; --muted:#4A4258; --line:#C9BFB0; --tint:#E4DBFF;
+  --good:#0F4426; --good-bg:#D3F0DE; --bad:#7A2C00; --bad-bg:#FFE0CC; --warn:#5C4300; --warn-bg:#FFF0B0;
+  --dif:#C9B6FF; --rate:#FFB08A; --facile:#A6E3BC;
+  --f-title:'Fraunces',Georgia,serif; --f-body:Arial,'Helvetica Neue',Helvetica,sans-serif;
+  --size:24px; --lh:1.6; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --ink:#C9B6FF; --ink-d:#E4DBFF; --lilas:#B9A3F2; --hl:#B8901A;
+  --bg:#17111F; --side:#211830; --card:#251B33; --fg:#F4F0FD; --muted:#C2B8D2; --line:#463A58; --tint:#352650;
+  --good:#9EE0B4; --good-bg:#123321; --bad:#FFB08A; --bad-bg:#3D2214; --warn:#FFD84D; --warn-bg:#3A2E10;
+  --dif:#5B34D6; --rate:#8A3A12; --facile:#1E7A45; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.5;padding:24px 20px 40px}
+p{margin:0}
+a{color:var(--ink);font-weight:700}
+h1{font-family:var(--f-title);font-weight:600;font-size:28px;margin:0;color:var(--ink);display:flex;align-items:center;gap:10px}
+h1 .sep{color:var(--muted);font-weight:500}
+h1 svg{width:40px;height:40px;flex:none}
+h2{font-family:var(--f-title);font-weight:600;font-size:24px;margin:0;color:var(--ink)}
+h3{font-family:var(--f-title);font-weight:600;font-size:19px;margin:0;color:var(--ink)}
+.muted{color:var(--muted);font-size:15px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.row{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+button,a.btn{font:inherit;font-weight:700;border-radius:999px;padding:8px 18px;min-height:46px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+button.primary{background:var(--ink);border-color:var(--ink);color:#FFFFFF}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid var(--lilas);outline-offset:2px}
+input[type=text],input[type=date],textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px}
+textarea{width:100%;min-height:90px;resize:vertical;line-height:var(--lh)}
+.tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--side);border:1px solid var(--line);flex-wrap:wrap}
+.tabs button{border:0;background:transparent;min-height:42px}
+.tabs button[aria-selected=true]{background:var(--ink);color:#FFFFFF}
+.msg{border-radius:14px;padding:12px 16px;font-size:16px}
+.msg.ok{background:var(--good-bg)} .msg.warn{background:var(--warn-bg)} .msg.err{background:var(--bad-bg)}
+
+/* Révision du jour */
+.hero{background:var(--tint);border:0}
+.big{font-family:var(--f-title);font-weight:600;font-size:44px;line-height:1.05;color:var(--ink)}
+.bar{height:12px;border-radius:999px;background:var(--side);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:var(--lilas);transition:width .3s}
+.qcard{background:var(--card);border:2px solid var(--ink);border-radius:30px 30px 30px 8px;padding:30px 32px;min-height:260px;display:flex;flex-direction:column;gap:18px}
+.qtext{font-size:var(--size);line-height:var(--lh)}
+.hole{display:inline-block;min-width:3.5em;border-bottom:3px solid var(--ink);color:transparent;user-select:none}
+.ans{background:var(--hl);color:#1E1A10;border-radius:6px;padding:0 4px}
+.src{font-size:15px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px;background:var(--side)}
+.chip.imp{background:var(--hl);color:#1E1A10} .chip.dif{background:var(--dif);color:var(--ink-d)} .chip.q{background:var(--tint);color:var(--ink-d)} .chip.rate{background:var(--rate);color:#1E1208}
+.grades{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grades button{min-height:64px;font-size:19px;flex-direction:column;gap:2px;border:0}
+.grades small{font-weight:400;font-size:14px;opacity:.85}
+.g1{background:var(--rate);color:#1E1208}.g2{background:var(--hl);color:#1E1A10}.g3{background:var(--facile);color:#0F2A18}
+kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6px;padding:2px 6px;opacity:.7}
+
+/* Notions */
+.nlist{display:flex;flex-direction:column}
+.nrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.nrow:first-child{border-top:0}
+.nrow .t{font-size:18px;line-height:1.5}
+.nrow .when{font-size:14px;color:var(--muted)}
+.editor{font-size:var(--size);line-height:2.1;padding:16px;border:1px dashed var(--line);border-radius:16px}
+.w{cursor:pointer;border-radius:6px;padding:2px 2px}
+.w:hover{background:var(--side)}
+.w.on{background:var(--hl);color:#1E1A10}
+.tools{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.group{display:flex;align-items:center;gap:6px}
+.seg2{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--side);border:1px solid var(--line)}
+.seg2 button{min-height:40px;border:0;background:transparent;padding:6px 14px}
+.seg2 button.on{background:var(--ink);color:#FFFFFF}
+
+/* Impression : feuille à trous, puis les réponses sur une autre page */
+#sheet{display:none}
+@media print{
+  body{background:#fff;color:#000;padding:0;font-size:13pt}
+  .wrap > *:not(#sheet){display:none!important}
+  #sheet{display:block}
+  #sheet h2{color:#000;font-size:18pt}
+  #sheet ol{line-height:2.2;font-size:14pt}
+  #sheet .hole{color:transparent;border-bottom:1.5pt solid #000;min-width:4.5em}
+  #sheet .answers{break-before:page}
+  #sheet .answers li{line-height:1.8}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row" style="justify-content:space-between">
+    <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Apprendre</span></h1>
+    <a class="btn" href="./">Retour à Écoute</a>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" aria-selected="true" data-tab="jour">Révision du jour</button>
+    <button role="tab" aria-selected="false" data-tab="notions">Mes notions</button>
+    <button role="tab" aria-selected="false" data-tab="imprimer">Imprimer</button>
+  </div>
+  <div id="note" class="msg" hidden></div>
+
+  <!-- ===== Révision du jour ===== -->
+  <section id="tab-jour" class="stack" style="display:flex;flex-direction:column;gap:20px">
+    <div class="card hero" id="accueil">
+      <span class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.08em">Ta révision du jour</span>
+      <p class="big" id="jour-titre">…</p>
+      <p id="jour-sous" class="muted" style="font-size:17px"></p>
+      <div class="row"><button class="primary" id="go">Commencer</button><span class="muted" id="jour-suite"></span></div>
+    </div>
+
+    <div id="seance" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="row" style="justify-content:space-between"><span class="muted" id="pos">1 sur 7</span><button id="quit">Arrêter là</button></div>
+      <div class="bar"><i id="prog"></i></div>
+      <div class="qcard">
+        <div class="src" id="q-src"></div>
+        <p class="qtext" id="q-text"></p>
+        <button class="primary" id="voir" style="align-self:flex-start">Voir la réponse <kbd>Espace</kbd></button>
+        <div id="noter" hidden style="display:flex;flex-direction:column;gap:10px">
+          <p class="muted">Tu t'en souvenais ?</p>
+          <div class="grades">
+            <button class="g1" data-g="1">Raté <small>revient tout de suite <kbd>1</kbd></small></button>
+            <button class="g2" data-g="2">Avec effort <small id="g2-when">demain <kbd>2</kbd></small></button>
+            <button class="g3" data-g="3">Facile <small id="g3-when">dans 3 jours <kbd>3</kbd></small></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="bilan" hidden>
+      <h2>Bravo, c'est fini pour aujourd'hui</h2>
+      <p id="bilan-t"></p>
+      <div class="row"><button class="primary" id="bilan-ok">Revenir</button></div>
+    </div>
+
+    <div class="card">
+      <h3>Réglages</h3>
+      <div class="row"><label for="exam"><b>Date du partiel</b></label><input type="date" id="exam"><span class="muted">À l'approche du partiel, les notions reviennent plus souvent.</span></div>
+      <div class="tools">
+        <div class="group"><span class="muted">Durée par jour</span><span class="seg2" id="minutes"><button data-m="5">5 min</button><button data-m="10" class="on">10 min</button><button data-m="15">15 min</button></span></div>
+        <div class="group"><span class="muted">Taille</span><button id="moins" aria-label="Texte plus petit">A−</button><button id="plus" aria-label="Texte plus grand">A+</button></div>
+        <div class="group"><span class="muted">Interligne</span><span class="seg2"><button id="lh-n" class="on">Normal</button><button id="lh-l">Large</button><button id="lh-xl">Très large</button></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Mes notions ===== -->
+  <section id="tab-notions" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card">
+      <h2>Ajouter des notions</h2>
+      <div class="row"><button class="primary" id="import">Prendre les passages marqués dans Écoute</button><span class="muted" id="import-info"></span></div>
+      <p class="muted">Chaque passage marqué « Important » ou « Difficile », ou qui a reçu une question, devient une notion. Les mots à cacher sont choisis tout seuls : tu peux les changer.</p>
+      <label for="ajout"><b>Ou écris une phrase à retenir</b></label>
+      <textarea id="ajout" placeholder="Par exemple : L'usus est le droit d'utiliser la chose."></textarea>
+      <div class="row"><button id="ajout-go">Ajouter cette phrase</button></div>
+    </div>
+    <div class="card" id="edit-card" hidden>
+      <h3>Choisis les mots à cacher</h3>
+      <p class="muted">Touche un mot pour le cacher ou le montrer. Les mots en jaune seront à retrouver.</p>
+      <div class="editor" id="editor"></div>
+      <div class="row"><button class="primary" id="edit-ok">Enregistrer</button><button id="edit-del">Supprimer la notion</button><button id="edit-x">Fermer</button></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Mes notions</h2><span class="muted" id="ncount"></span></div>
+      <div class="nlist" id="nlist"></div>
+    </div>
+  </section>
+
+  <!-- ===== Imprimer ===== -->
+  <section id="tab-imprimer" hidden class="card">
+    <h2>Imprimer une feuille à trous</h2>
+    <p>La feuille contient les phrases avec des trous à remplir. Les réponses sont sur une deuxième page, pour se corriger seul.</p>
+    <div class="row">
+      <button class="primary" data-print="jour">Imprimer la révision du jour</button>
+      <button data-print="tout">Imprimer toutes les notions</button>
+    </div>
+    <p class="muted">Astuce : dans la fenêtre d'impression, choisis « Enregistrer en PDF » pour garder la feuille sur ton téléphone.</p>
+  </section>
+
+  <div id="sheet"></div>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const DAY = 864e5, KEY = "alto-apprendre-v1";
+const STOP = new Set("le la les un une des du de d l au aux et ou en est sont a à ce cette ces qui que quoi dont où se sa son ses leur leurs il elle ils elles on nous vous je tu pour par sur dans avec sans pas plus mais donc car ne y c s n qu lui être avoir fait faire comme tout tous très aussi".split(" "));
+
+/* ---------- Données ---------- */
+let db = {notions: [], exam: "", minutes: 10, day: "", newToday: 0};
+try { const o = JSON.parse(localStorage.getItem(KEY) || "null"); if (o) db = Object.assign(db, o); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
+const today = () => new Date().toISOString().slice(0, 10);
+if (db.day !== today()) { db.day = today(); db.newToday = 0; save(); }
+const uid = () => Math.random().toString(36).slice(2, 10);
+const tokens = text => text.split(/(\s+)/);                  // mots et espaces, dans l'ordre
+const clean = w => w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").replace(/^(l|d|qu|n|s|c|j)['’]/, "");
+function autoHoles(text) {
+  const t = tokens(text), cand = [];
+  t.forEach((w, i) => { const c = clean(w); if (i > 0 && c.length >= 5 && !STOP.has(c)) cand.push([c.length, i]); });
+  cand.sort((a, b) => b[0] - a[0]);
+  const n = text.split(/\s+/).length > 14 ? 2 : 1;
+  return cand.slice(0, n).map(x => x[1]).sort((a, b) => a - b);
+}
+const START_D = {imp: 5, dif: 6.5, q: 6.5, rate: 7, manuel: 5};
+function makeNotion(text, mark, src) {
+  return {id: uid(), text: text.trim(), holes: autoHoles(text), mark: mark || "manuel", src: src || "", D: START_D[mark] || 5,
+    S: 0, due: 0, last: 0, reps: 0, lapses: 0, created: Date.now()};
+}
+
+/* ---------- L'algorithme (inspiré de FSRS, l'algorithme d'Anki) ----------
+   S = stabilité du souvenir, en jours. D = difficulté, de 1 à 10.
+   Chance de s'en souvenir après t jours : R = (1 + t / (9 S))^-1.
+   La notion revient quand R descend au niveau visé (90 %, 95 % la semaine du partiel). */
+const clampD = d => Math.min(10, Math.max(1, d));
+const retr = (n, now) => n.last ? Math.pow(1 + (now - n.last) / DAY / (9 * Math.max(n.S, 0.1)), -1) : 0;
+function examTime() { return db.exam ? Date.parse(db.exam + "T08:00:00") : 0; }
+function aim(now) { const ex = examTime(); if (!ex) return 0.9; const d = (ex - now) / DAY; return d >= 0 && d <= 7 ? 0.95 : 0.9; }
+const daysFor = (S, r) => 9 * S * (1 / r - 1);
+function preview(n, g, now) {                 // ce que donnerait la réponse g, sans rien changer
+  const c = Object.assign({}, n); schedule(c, g, now); return c;
+}
+function schedule(n, g, now) {
+  if (!n.last) {                                   // première fois
+    n.S = g === 1 ? 0.3 : g === 2 ? 1.2 : 3.5;
+    n.D = clampD(n.D + (g === 1 ? 1 : g === 2 ? 0.3 : -0.8));
+  } else {
+    const R = retr(n, now);
+    if (g === 1) { n.S = Math.max(0.3, n.S * 0.35); n.D = clampD(n.D + 1); n.lapses++; }
+    else {
+      const ease = (11 - n.D) / 10;                // plus c'est difficile, moins ça grandit
+      const late = 1 + (1 - R) * 1.5;              // retrouvé alors qu'on oubliait : le souvenir se renforce plus
+      n.S = n.S * (1 + ease * (g === 3 ? 2.6 : 1.1) * late);
+      n.D = clampD(n.D + (g === 2 ? 0.25 : -0.5));
+    }
+  }
+  n.reps++; n.last = now;
+  let days = g === 1 ? 0 : Math.max(0.6, daysFor(n.S, aim(now)));
+  const ex = examTime();
+  if (ex && now < ex && now + days * DAY > ex - DAY / 2) days = Math.max(0.6, (ex - DAY - now) / DAY);   // revoir la veille du partiel
+  n.due = g === 1 ? now : now + days * DAY;
+}
+const when = ms => { const d = (ms - Date.now()) / DAY;
+  if (d < 0.02) return "tout de suite"; if (d < 1.5) return "demain"; if (d < 13.5) return `dans ${Math.round(d)} jours`;
+  if (d < 60) return `dans ${Math.round(d / 7)} semaines`; return `dans ${Math.round(d / 30)} mois`; };
+
+/* ---------- La révision du jour : ce qui s'oublie le plus, sans dépasser le temps choisi ---------- */
+const SEC_PER = 20, NEW_MAX = 10;
+function todayQueue(now = Date.now()) {
+  const max = Math.max(3, Math.floor(db.minutes * 60 / SEC_PER));
+  const end = new Date(); end.setHours(23, 59, 59, 999);
+  const due = db.notions.filter(n => n.last && n.due <= end.getTime()).sort((a, b) => retr(a, now) - retr(b, now));
+  const fresh = db.notions.filter(n => !n.last).sort((a, b) => (b.mark === "dif" || b.mark === "q") - (a.mark === "dif" || a.mark === "q") || a.created - b.created)
+    .slice(0, Math.max(0, NEW_MAX - db.newToday));
+  return due.concat(fresh).slice(0, max);
+}
+function renderToday() {
+  const q = todayQueue(), n = q.length;
+  if (!db.notions.length) { $("jour-titre").textContent = "Rien à réviser pour l'instant"; $("jour-sous").textContent = "Ajoute des notions dans « Mes notions », ou prends les passages marqués dans Écoute."; $("go").disabled = true; $("jour-suite").textContent = ""; return; }
+  if (!n) { const next = Math.min(...db.notions.map(x => x.due || Infinity)); $("jour-titre").textContent = "Tout est à jour"; $("jour-sous").textContent = "Reviens " + when(next) + ". Ton cerveau a besoin de temps pour oublier un peu."; $("go").disabled = true; $("jour-suite").textContent = ""; return; }
+  const min = Math.max(1, Math.round(n * SEC_PER / 60));
+  $("jour-titre").textContent = `${n} notion${n > 1 ? "s" : ""}, ${min} minute${min > 1 ? "s" : ""}`;
+  $("jour-sous").textContent = "Arrête-toi quand tu veux. Ce que tu ne fais pas aujourd'hui revient demain.";
+  const ex = examTime(); $("jour-suite").textContent = ex && ex > Date.now() ? `Partiel ${when(ex)}` : "";
+  $("go").disabled = false;
+}
+
+/* ---------- Affichage d'une notion ---------- */
+function holeHTML(n, show) {
+  const t = tokens(n.text), set = new Set(n.holes);
+  const box = document.createDocumentFragment();
+  t.forEach((w, i) => {
+    if (!set.has(i)) { box.append(w); return; }
+    const m = w.match(/^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/u) || ["", "", w, ""];
+    box.append(m[1]);
+    const s = document.createElement("span");
+    if (show) { s.className = "ans"; s.textContent = m[2]; }
+    else { s.className = "hole"; s.textContent = m[2]; s.setAttribute("aria-label", "mot caché"); s.style.minWidth = Math.max(3, m[2].length * 0.55) + "em"; }
+    box.append(s, m[3]);
+  });
+  return box;
+}
+const MARK = {imp: ["imp", "Important"], dif: ["dif", "Difficile"], q: ["q", "Question posée"], rate: ["rate", "Raté"], manuel: ["", "Ajoutée à la main"]};
+function srcHTML(n) {
+  const el = document.createDocumentFragment(); const [c, l] = MARK[n.mark] || MARK.manuel;
+  const chip = document.createElement("span"); chip.className = "chip " + c; chip.textContent = l; el.append(chip);
+  if (n.src) el.append(document.createTextNode(n.src));
+  return el;
+}
+
+/* ---------- La séance ---------- */
+let queue = [], idx = 0, done = 0, stats = {1: 0, 2: 0, 3: 0}, shown = false;
+function startSession() {
+  queue = todayQueue(); idx = 0; done = 0; stats = {1: 0, 2: 0, 3: 0};
+  if (!queue.length) return;
+  $("accueil").hidden = true; $("bilan").hidden = true; $("seance").hidden = false; showCard();
+}
+function showCard() {
+  const n = queue[idx]; shown = false;
+  $("pos").textContent = `${idx + 1} sur ${queue.length}`;
+  $("prog").style.width = Math.round(idx / queue.length * 100) + "%";
+  $("q-src").replaceChildren(srcHTML(n)); $("q-text").replaceChildren(holeHTML(n, false));
+  $("voir").hidden = false; $("noter").hidden = true; $("voir").focus();
+}
+function reveal() {
+  if (shown) return; shown = true; const n = queue[idx], now = Date.now();
+  $("q-text").replaceChildren(holeHTML(n, true));
+  $("g2-when").firstChild.textContent = when(preview(n, 2, now).due) + " ";
+  $("g3-when").firstChild.textContent = when(preview(n, 3, now).due) + " ";
+  $("voir").hidden = true; $("noter").hidden = false;
+}
+function grade(g) {
+  if (!shown) return; const n = queue[idx];
+  if (!n.last) db.newToday++;
+  schedule(n, g, Date.now()); stats[g]++; save();
+  if (g === 1 && queue.slice(idx + 1).filter(x => x === n).length === 0) queue.push(n);   // « Raté » : elle revient à la fin
+  else done++;
+  idx++;
+  if (idx >= queue.length) endSession(); else showCard();
+}
+function endSession() {
+  $("seance").hidden = true; $("bilan").hidden = false; $("prog").style.width = "100%";
+  const tot = stats[1] + stats[2] + stats[3];
+  $("bilan-t").textContent = tot ? `${stats[3]} facile${stats[3] > 1 ? "s" : ""}, ${stats[2]} avec effort, ${stats[1]} raté${stats[1] > 1 ? "s" : ""}. Les notions difficiles reviendront plus tôt.` : "Tu reprendras plus tard.";
+  renderToday(); renderList();
+}
+$("go").addEventListener("click", startSession);
+$("voir").addEventListener("click", reveal);
+document.querySelectorAll(".grades button").forEach(b => b.addEventListener("click", () => grade(Number(b.dataset.g))));
+$("quit").addEventListener("click", endSession);
+$("bilan-ok").addEventListener("click", () => { $("bilan").hidden = true; $("accueil").hidden = false; });
+document.addEventListener("keydown", e => {
+  if ($("seance").hidden || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key === " " || e.key === "Enter") { if (!shown) { e.preventDefault(); reveal(); } }
+  else if (["1", "2", "3"].includes(e.key)) grade(Number(e.key));
+});
+
+/* ---------- Mes notions ---------- */
+function renderList() {
+  const box = $("nlist"); box.replaceChildren();
+  $("ncount").textContent = `${db.notions.length} notion${db.notions.length > 1 ? "s" : ""}`;
+  if (!db.notions.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Aucune notion pour l'instant."; box.append(p); return; }
+  [...db.notions].sort((a, b) => (a.due || 0) - (b.due || 0)).forEach(n => {
+    const r = document.createElement("div"); r.className = "nrow";
+    const l = document.createElement("div");
+    const t = document.createElement("p"); t.className = "t"; t.append(holeHTML(n, true));
+    const w = document.createElement("p"); w.className = "when src"; w.append(srcHTML(n), document.createTextNode(" · " + (n.last ? "revient " + when(n.due) : "nouvelle")));
+    l.append(t, w);
+    const b = document.createElement("button"); b.textContent = "Modifier"; b.addEventListener("click", () => openEditor(n));
+    r.append(l, b); box.append(r);
+  });
+}
+let editing = null, editHoles = null;
+function openEditor(n) {
+  editing = n; editHoles = new Set(n.holes);
+  const ed = $("editor"); ed.replaceChildren();
+  tokens(n.text).forEach((w, i) => {
+    if (/^\s+$/.test(w) || !w) { ed.append(w); return; }
+    const s = document.createElement("span"); s.className = "w" + (editHoles.has(i) ? " on" : ""); s.textContent = w; s.tabIndex = 0; s.setAttribute("role", "button");
+    const tog = () => { if (editHoles.has(i)) editHoles.delete(i); else editHoles.add(i); s.classList.toggle("on"); };
+    s.addEventListener("click", tog); s.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tog(); } });
+    ed.append(s);
+  });
+  $("edit-card").hidden = false; $("edit-card").scrollIntoView({block: "start", behavior: "smooth"});
+}
+$("edit-ok").addEventListener("click", () => {
+  if (!editing) return;
+  if (!editHoles.size) { note("Choisis au moins un mot à cacher.", "warn"); return; }
+  editing.holes = [...editHoles].sort((a, b) => a - b); save(); $("edit-card").hidden = true; editing = null; renderList(); renderToday(); note("Notion enregistrée.", "ok");
+});
+$("edit-del").addEventListener("click", () => { if (!editing) return; db.notions = db.notions.filter(x => x !== editing); save(); $("edit-card").hidden = true; editing = null; renderList(); renderToday(); note("Notion supprimée.", "ok"); });
+$("edit-x").addEventListener("click", () => { $("edit-card").hidden = true; editing = null; });
+$("ajout-go").addEventListener("click", () => {
+  const v = $("ajout").value.trim(); if (v.split(/\s+/).length < 3) { note("Écris une phrase d'au moins 3 mots.", "warn"); return; }
+  const n = makeNotion(v, "manuel", ""); db.notions.push(n); save(); $("ajout").value = ""; renderList(); renderToday(); openEditor(n);
+});
+$("import").addEventListener("click", () => {
+  let ec = null; try { ec = JSON.parse(localStorage.getItem("ni-ecoute-v2") || "null"); } catch (e) {}
+  if (!ec || !ec.segs || !ec.segs.length) { $("import-info").textContent = "Aucun cours trouvé dans Écoute sur cet appareil."; return; }
+  const have = new Set(db.notions.map(n => n.text));
+  const src = (ec.matiere || "Cours") + " · " + new Date().toLocaleDateString("fr-FR");
+  let added = 0;
+  ec.segs.forEach(s => {
+    const text = (s.fix || s.text || "").trim(); if (!text || text.split(/\s+/).length < 3 || have.has(text)) return;
+    const mark = s.dif ? "dif" : s.q ? "q" : s.imp ? "imp" : null; if (!mark) return;
+    db.notions.push(makeNotion(text, mark, src)); have.add(text); added++;
+  });
+  save(); renderList(); renderToday();
+  $("import-info").textContent = added ? `${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}.` : "Rien de nouveau : marque des passages « Important » ou « Difficile » pendant le cours.";
+});
+
+/* ---------- Imprimer ---------- */
+document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click", () => {
+  const list = b.dataset.print === "jour" ? todayQueue() : db.notions;
+  if (!list.length) { note("Il n'y a rien à imprimer pour l'instant.", "warn"); return; }
+  const sh = $("sheet"); sh.replaceChildren();
+  const h = document.createElement("h2"); h.textContent = "Alto · Texte à trous · " + new Date().toLocaleDateString("fr-FR");
+  const ol = document.createElement("ol"); list.forEach(n => { const li = document.createElement("li"); li.append(holeHTML(n, false)); ol.append(li); });
+  const ans = document.createElement("div"); ans.className = "answers";
+  const h2 = document.createElement("h2"); h2.textContent = "Les réponses";
+  const ol2 = document.createElement("ol"); list.forEach(n => { const li = document.createElement("li"); li.append(holeHTML(n, true)); ol2.append(li); });
+  ans.append(h2, ol2); sh.append(h, ol, ans); window.print();
+}));
+
+/* ---------- Onglets, réglages ---------- */
+function tab(name) {
+  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  ["jour", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
+  if (name === "notions") renderList(); if (name === "jour") renderToday();
+}
+document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => tab(b.dataset.tab)));
+function note(t, k) { const n = $("note"); if (!t) { n.hidden = true; return; } n.className = "msg " + (k || "ok"); n.textContent = t; n.hidden = false; clearTimeout(note.t); note.t = setTimeout(() => n.hidden = true, 5000); }
+$("exam").value = db.exam || "";
+$("exam").addEventListener("change", () => { db.exam = $("exam").value; save(); renderToday(); });
+const setMin = m => { db.minutes = m; save(); document.querySelectorAll("#minutes button").forEach(b => b.classList.toggle("on", Number(b.dataset.m) === m)); renderToday(); };
+document.querySelectorAll("#minutes button").forEach(b => b.addEventListener("click", () => setMin(Number(b.dataset.m))));
+setMin(db.minutes || 10);
+let size = 24; try { size = Number(localStorage.getItem("alto-taille")) || 24; } catch (e) {}
+const setSize = v => { size = Math.min(40, Math.max(16, v)); document.documentElement.style.setProperty("--size", size + "px"); try { localStorage.setItem("alto-taille", size); } catch (e) {} };
+$("moins").addEventListener("click", () => setSize(size - 2)); $("plus").addEventListener("click", () => setSize(size + 2)); setSize(size);
+const LH = {"lh-n": 1.6, "lh-l": 2, "lh-xl": 2.5};
+function setLh(id) { document.documentElement.style.setProperty("--lh", LH[id] || 1.6); Object.keys(LH).forEach(k => $(k).classList.toggle("on", k === id)); try { localStorage.setItem("alto-interligne", id); } catch (e) {} }
+Object.keys(LH).forEach(k => $(k).addEventListener("click", () => setLh(k)));
+try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { setLh("lh-n"); }
+
+/* Premier passage : on prend tout seul les passages marqués dans Écoute */
+if (!db.notions.length) $("import").click();
+renderToday(); renderList();
+})();
+</script>
+</body>
+</html>
