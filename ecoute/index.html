@@ -165,6 +165,12 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
     </div>
     <p class="muted" id="micinfo">Clique sur « Tester le micro » et parle : la barre verte doit bouger.</p>
     <div class="row">
+      <label for="micsel">Micro</label>
+      <select id="micsel"><option value="">Micro par défaut</option></select>
+    </div>
+    <div class="row"><input type="checkbox" id="boost" checked><label for="boost">Amplifier la voix du prof (amphi, prof loin)</label></div>
+    <p class="muted">L'amplification monte le son, coupe les bruits graves et égalise la voix avant l'écriture. Le meilleur résultat reste un micro près du prof : le téléphone posé sur son bureau, ou un petit micro-cravate.</p>
+    <div class="row">
       <label for="engine-mode">Écoute</label>
       <select id="engine-mode">
         <option value="cloud">En ligne (Google) : marche presque partout</option>
@@ -415,14 +421,14 @@ function makeRec() {
       if (!selfAbort) aborts++; selfAbort = false;
       if (local && aborts >= 3) {            // l'écoute sur l'appareil se coupe : on passe en ligne
         local = false; aborts = 0; note("L'écoute sur l'appareil se coupe sans arrêt. Je passe en écoute en ligne (Google).", "warn");
-        setMode("cloud", "Écoute en ligne (Google)"); rec = makeRec(); setTimeout(() => { try { rec.start(); } catch (x) {} }, 300);
+        setMode("cloud", "Écoute en ligne (Google)"); rec = makeRec(); setTimeout(() => startRec(rec), 300);
       }
       return;
     }
     if (e.error === "audio-capture") { note("Aucun son n'arrive du micro. Utilise « Tester le micro » après avoir arrêté.", "err"); stopAll(); return; }
     if (local && (e.error === "language-not-supported" || e.error === "service-not-allowed" || e.error === "not-allowed")) {
       local = false; note("L'écoute sur l'appareil ne marche pas ici. Je passe en écoute en ligne (Google).", "warn");
-      setMode("cloud", "Écoute en ligne (Google)"); selfAbort = true; try { r.abort(); } catch (x) {} rec = makeRec(); setTimeout(() => { try { rec.start(); } catch (x) {} }, 300); return;
+      setMode("cloud", "Écoute en ligne (Google)"); selfAbort = true; try { r.abort(); } catch (x) {} rec = makeRec(); setTimeout(() => startRec(rec), 300); return;
     }
     if (e.error === "not-allowed" || e.error === "service-not-allowed") { note("Le micro est refusé. Autorise le micro pour cette page dans Chrome (icône à gauche de l'adresse), puis réessaie.", "err"); stopAll(); return; }
     if (e.error === "network") { diag("Le réseau a coupé. Je reprends dès qu'il revient. Le texte est gardé."); return; }
@@ -439,7 +445,7 @@ function makeRec() {
     restarts++; $("restarts").textContent = restarts ? `(relancée ${restarts} fois${lastErr ? " · dernière cause : " + lastErr : ""})` : "";
     if (fails >= 6) diag("L'écoute se coupe souvent" + (lastErr ? " (" + lastErr + ")" : "") + ". Je continue de la relancer.");
     if (aborts >= 4) diag("L'écoute est coupée par autre chose : un autre onglet « Écoute », la petite fenêtre, ou une appli de dictée. Ferme-les.");
-    setTimeout(() => { if (running && !paused && r === rec) { try { r.start(); } catch (e) {} } }, Math.min(3000, 200 + fails * 300));
+    setTimeout(() => { if (running && !paused && r === rec) startRec(r); }, Math.min(3000, 200 + fails * 300));
   };
   return r;
 }
@@ -461,22 +467,67 @@ let micTimer = null;
 $("mictest").addEventListener("click", async () => {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $("micinfo").textContent = "Ce navigateur ne permet pas de tester le micro."; return; }
   let stream;
-  try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); } catch (e) { micError(e && e.name); $("micinfo").textContent = "Le test n'a pas marché : lis le message en haut."; return; }
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: micConstraints()}); } catch (e) { micError(e && e.name); $("micinfo").textContent = "Le test n'a pas marché : lis le message en haut."; return; }
+  listMics();
   const tr = stream.getAudioTracks()[0];
   $("micinfo").textContent = "Micro utilisé : " + (tr && tr.label ? tr.label : "micro par défaut") + ". Parle pendant 8 secondes…";
   const ctx = new (window.AudioContext || window.webkitAudioContext)(); const an = ctx.createAnalyser(); an.fftSize = 512;
-  ctx.createMediaStreamSource(stream).connect(an); const data = new Uint8Array(an.fftSize); let max = 0;
+  const chain = boostChain(ctx, ctx.createMediaStreamSource(stream)); chain.connect(an); const data = new Uint8Array(an.fftSize); let max = 0;
   clearInterval(micTimer); const t0m = Date.now();
   micTimer = setInterval(() => {
     an.getByteTimeDomainData(data); let peak = 0; for (const v of data) peak = Math.max(peak, Math.abs(v - 128));
     const lvl = Math.min(100, peak / 64 * 100); max = Math.max(max, lvl); $("miclevel").style.width = lvl + "%";
     if (Date.now() - t0m > 8000) {
       clearInterval(micTimer); stream.getTracks().forEach(t => t.stop()); ctx.close(); $("miclevel").style.width = "0";
-      $("micinfo").textContent = max > 12 ? "Le micro marche. Tu peux démarrer." : "Presque rien n'a été entendu. Parle plus fort, rapproche-toi, ou choisis un autre micro dans Windows (Paramètres → Son → Entrée).";
+      $("micinfo").textContent = max > 30 ? "Le son est bon. Tu peux démarrer." : max > 12 ? "Le son est faible : l'écriture risque de rater des mots. Rapproche l'appareil du prof ou choisis un autre micro." : "Presque rien n'a été entendu. Rapproche l'appareil du prof, coche « Amplifier », ou choisis un autre micro.";
     }
   }, 80);
 });
 
+/* ---------- Micro : choix et amplification ---------- */
+let boostCtx = null, boostStream = null, boostTrack = null;
+function micConstraints() {
+  const id = $("micsel").value; const c = {echoCancellation: false, noiseSuppression: true, autoGainControl: true};
+  if (id) c.deviceId = {exact: id}; return c;
+}
+function boostChain(ctx, src) {
+  if (!$("boost").checked) return src;
+  const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 120;      // coupe les bruits graves (ventilation, pas)
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -40; comp.knee.value = 20; comp.ratio.value = 6; comp.attack.value = 0.005; comp.release.value = 0.25;
+  const g = ctx.createGain(); g.gain.value = 3;                                               // monte la voix lointaine
+  src.connect(hp); hp.connect(comp); comp.connect(g); return g;
+}
+async function listMics() {
+  try {
+    const sel = $("micsel"), cur = sel.value; const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "audioinput");
+    sel.replaceChildren(mk("option", "", "Micro par défaut")); sel.options[0].value = "";
+    devs.forEach(d => { if (!d.deviceId || d.deviceId === "default") return; const o = mk("option", "", d.label || "Micro"); o.value = d.deviceId; sel.append(o); });
+    sel.value = cur; try { const saved = localStorage.getItem("alto-micro"); if (!cur && saved && [...sel.options].some(o => o.value === saved)) sel.value = saved; } catch (e) {}
+  } catch (e) {}
+}
+$("micsel").addEventListener("change", () => { try { localStorage.setItem("alto-micro", $("micsel").value); } catch (e) {} });
+async function openBoost() {
+  closeBoost();
+  if (!$("boost").checked && !$("micsel").value) return;
+  try {
+    boostStream = await navigator.mediaDevices.getUserMedia({audio: micConstraints()});
+    boostCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = boostCtx.createMediaStreamDestination();
+    boostChain(boostCtx, boostCtx.createMediaStreamSource(boostStream)).connect(dest);
+    boostTrack = dest.stream.getAudioTracks()[0];
+  } catch (e) { closeBoost(); }
+}
+function closeBoost() {
+  try { boostStream && boostStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+  try { boostCtx && boostCtx.close(); } catch (e) {}
+  boostCtx = boostStream = boostTrack = null;
+}
+/* Chrome récent accepte une piste audio : on lui donne la voix amplifiée. Sinon, il écoute le micro normal. */
+function startRec(r) {
+  if (boostTrack && boostTrack.readyState === "live") { try { r.start(boostTrack); return; } catch (e) {} }
+  try { r.start(); } catch (e) {}
+}
+listMics();
 let fails = 0, lastStart = 0, gotText = false, watchdog = null, restarts = 0, lastErr = "", aborts = 0, selfAbort = false;
 /* Une seule écoute à la fois : si un autre onglet de cette page démarre, celui-ci s'arrête. */
 let chan = null; try { chan = new BroadcastChannel("ni-ecoute"); } catch (e) {}
@@ -497,12 +548,13 @@ async function start() {
   if (local && $("engine-mode").value === "auto") watchdog = setTimeout(() => {
     if (running && !paused && !gotText && local) {
       local = false; note("Rien n'est écrit avec l'écoute sur l'appareil. Je passe en écoute en ligne (Google).", "warn");
-      setMode("cloud", "Écoute en ligne (Google)"); const old = rec; rec = makeRec(); selfAbort = true; try { old.abort(); } catch (x) {} setTimeout(() => { try { rec.start(); } catch (x) {} }, 300);
+      setMode("cloud", "Écoute en ligne (Google)"); const old = rec; rec = makeRec(); selfAbort = true; try { old.abort(); } catch (x) {} setTimeout(() => startRec(rec), 300);
     }
   }, 15000);
+  await openBoost(); listMics();
   rec = makeRec(); running = true; paused = false;
   t0 = Date.now() - (segs.length ? segs[segs.length - 1].t : 0); pausedMs = 0;
-  try { rec.start(); } catch (e) {}
+  startRec(rec);
   $("go").hidden = true; $("pause").hidden = false; $("stop").hidden = false; $("prep").hidden = true;
   setMode(local ? "local" : "cloud", local ? "Écoute sur l'appareil" : "Écoute en ligne (Google)");
   clearTimeout(stopTimer); stopTimer = setTimeout(() => { stopAll(); note("Arrêt automatique : la durée prévue est passée. Le texte est gardé.", "ok"); }, Number($("duree").value) * 60000);
@@ -520,7 +572,7 @@ function pause(min) {
 function resume() {
   if (!running || !paused) return;
   pausedMs += Date.now() - pauseStart; paused = false; clearTimeout(resumeTimer);
-  try { rec.start(); } catch (e) {}
+  startRec(rec);
   $("pause").textContent = "Pause"; note(""); $("mode").classList.add("live");
   try { navigator.vibrate && navigator.vibrate(200); } catch (e) {}
 }
@@ -529,7 +581,7 @@ function stopAll() {
   try { rec && rec.stop(); } catch (e) {} showInterim("");
   $("go").hidden = false; $("go").textContent = "Reprendre l'écoute"; $("pause").hidden = true; $("stop").hidden = true; $("veille").hidden = true; $("prep").hidden = false;
   $("pause").textContent = "Pause"; $("etat").textContent = segs.length ? "Arrêté · texte gardé" : "Prêt"; $("mode").classList.remove("live");
-  try { wake && wake.release(); } catch (e) {} wake = null; save();
+  try { wake && wake.release(); } catch (e) {} wake = null; closeBoost(); save();
   if (segs.length) openFin();
 }
 $("accord").addEventListener("change", () => { $("go").disabled = !$("accord").checked; });
