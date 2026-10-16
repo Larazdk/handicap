@@ -18,9 +18,11 @@
     $("lien-go").hidden = true;
     $("lien-intro").textContent = "Ce téléphone envoie le cours à ton ordinateur. Pose-le près du prof, puis démarre l'écoute plus bas.";
     let peer = null, conn = null, sent = 0, retry = null;
+    try { $("boost").checked = false; } catch (e) {}   // téléphone près du prof : pas besoin d'amplifier
     const ready = () => conn && conn.open;
     const flush = () => { if (!ready()) return;
-      while (sent < A.count()) { const s = A.seg(sent); conn.send({type: "seg", i: sent, text: s.fix || s.text, t: s.t}); sent++; } };
+      while (sent < A.count()) { const s = A.seg(sent); conn.send({type: "seg", i: sent, text: s.fix || s.text, t: s.t}); sent++; }
+      etat("local live", `Relié · ${sent} phrase${sent > 1 ? "s" : ""} envoyée${sent > 1 ? "s" : ""}`); };
     A.onSeg = () => flush();
     A.onInterim = text => { if (ready()) conn.send({type: "interim", text}); };
     const connect = () => {
@@ -44,7 +46,9 @@
   }
 
   /* ---------------- L'ordinateur : il reçoit ---------------- */
-  let peer = null, got = 0;
+  let peer = null, got = 0, last = 0, live = false, gotNow = 0;
+  setInterval(() => { if (!live) return; const s = last ? Math.round((Date.now() - last) / 1000) : null;
+    etat(s !== null && s < 20 ? "local live" : "cloud", `En direct · ${gotNow} phrase${gotNow > 1 ? "s" : ""} reçue${gotNow > 1 ? "s" : ""}` + (s === null ? " · j'attends la première" : ` · dernière il y a ${s} s`)); }, 1000);
   try { got = Number(localStorage.getItem("alto-lien-got")) || 0; } catch (e) {}
   const saveGot = () => { try { localStorage.setItem("alto-lien-got", got); } catch (e) {} };
   const showQr = id => {
@@ -61,14 +65,14 @@
     });
     peer.on("connection", conn => {
       if (!A.count()) { got = 0; saveGot(); }   // cours effacé sur l'ordinateur : on repart de zéro
-      conn.on("open", () => { etat("local live", "Téléphone relié · le cours arrive"); $("lien-qr").hidden = true; A.wake(); conn.send({type: "ack", n: got}); });
+      conn.on("open", () => { live = true; etat("local live", "Téléphone relié · le cours arrive"); $("lien-qr").hidden = true; A.wake(); conn.send({type: "ack", n: got}); });
       conn.on("data", d => {
         if (!d) return;
         if (d.type === "hello") { if (typeof d.total === "number" && d.total < got) { got = 0; saveGot(); } conn.send({type: "ack", n: got}); }
-        else if (d.type === "seg") { if (d.i === got) { A.addRemote(d.text, d.t || 0); got++; saveGot(); } else if (d.i > got) conn.send({type: "ack", n: got}); }
-        else if (d.type === "interim") A.remoteInterim(d.text);
+        else if (d.type === "seg") { if (d.i === got) { A.addRemote(d.text, d.t || 0); got++; gotNow++; last = Date.now(); saveGot(); } else if (d.i > got) conn.send({type: "ack", n: got}); }
+        else if (d.type === "interim") { A.remoteInterim(d.text); if (d.text) last = Date.now(); }
       });
-      conn.on("close", () => { A.remoteInterim(""); etat("off", "Téléphone déconnecté · le texte reçu est gardé"); });
+      conn.on("close", () => { live = false; A.remoteInterim(""); etat("off", "Téléphone déconnecté · le texte reçu est gardé"); });
     });
     peer.on("disconnected", () => { try { peer.reconnect(); } catch (e) {} });
     peer.on("error", e => {
