@@ -44,7 +44,7 @@ button,a.btn,label.btn{font:inherit;font-weight:700;border-radius:999px;padding:
 button.primary{background:var(--ink);border-color:var(--ink);color:#FFFFFF}
 button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:3px solid var(--lilas);outline-offset:2px}
-input[type=text],input[type=date],textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px}
+input[type=text],input[type=date],input[type=time],input[type=number],select,textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px}
 textarea{width:100%;min-height:90px;resize:vertical;line-height:var(--lh)}
 .nav{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--side);border:1px solid var(--line)}
 .nav a{padding:8px 20px;border-radius:999px;text-decoration:none;color:var(--fg);font-weight:700;min-height:40px;display:inline-flex;align-items:center}
@@ -93,6 +93,28 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 .seg2 button{min-height:40px;border:0;background:transparent;padding:6px 14px}
 .seg2 button.on{background:var(--ink);color:#FFFFFF}
 
+/* Les grands boutons d'accueil */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;text-align:left;border-radius:24px;padding:18px 20px;min-height:118px;gap:6px}
+.tile b{font-family:var(--f-title);font-weight:600;font-size:21px;color:var(--ink)}
+.tile span{font-weight:400;color:var(--muted);font-size:15px;line-height:1.4}
+.tile.hot{background:var(--hl);border-color:var(--hl)} .tile.hot b,.tile.hot span{color:#1E1A10}
+/* Planning */
+.mrow{display:grid;grid-template-columns:minmax(140px,1.3fr) minmax(150px,1fr) 90px minmax(150px,1fr);gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.mrow.head{border-top:0;padding-top:0;font-size:14px;color:var(--muted);font-weight:700}
+@media (max-width:640px){.mrow{grid-template-columns:1fr 1fr}.mrow.head{display:none}}
+.dot{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:8px;vertical-align:-2px;flex:none}
+.day{border-top:1px solid var(--line);padding:14px 0;display:flex;flex-direction:column;gap:6px}
+.day:first-child{border-top:0}
+.slot{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px;align-items:baseline}
+.slot .h{font-weight:700;font-variant-numeric:tabular-nums}
+.slot.busy,.slot.pause{color:var(--muted)}
+/* Feuille blanche */
+.res{border-radius:14px;padding:10px 14px;line-height:var(--lh);font-size:18px}
+.res.ok{background:var(--good-bg)} .res.no{background:var(--bad-bg)}
+.kw{display:inline-block;border-radius:999px;padding:2px 10px;margin:2px 4px 2px 0;font-size:15px;font-weight:700}
+.kw.ok{background:var(--good-bg);color:var(--good)} .kw.no{background:var(--bad-bg);color:var(--bad)}
+
 /* Impression : feuille à trous, puis les réponses sur une autre page */
 #sheet{display:none}
 @media print{
@@ -115,8 +137,10 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
   </div>
 
   <div class="tabs" role="tablist" aria-label="Sections">
-    <button role="tab" aria-selected="true" data-tab="jour">Révision du jour</button>
-    <button role="tab" aria-selected="false" data-tab="notions">Mes notions</button>
+    <button role="tab" aria-selected="true" data-tab="jour">Aujourd'hui</button>
+    <button role="tab" aria-selected="false" data-tab="blanche">Feuille blanche</button>
+    <button role="tab" aria-selected="false" data-tab="planning">Mon planning</button>
+    <button role="tab" aria-selected="false" data-tab="notions">Mes cours</button>
     <button role="tab" aria-selected="false" data-tab="imprimer">Imprimer</button>
   </div>
   <div id="note" class="msg" hidden></div>
@@ -129,6 +153,12 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
       <p id="jour-sous" class="muted" style="font-size:17px"></p>
       <div class="row" id="jour-go"><button class="primary" id="go">Commencer</button><span class="muted" id="jour-suite"></span></div>
       <div class="row" id="vide" hidden><button class="primary" id="vide-imp">Importer un cours</button><a class="btn" href="./">Prendre un cours avec Écoute</a></div>
+    </div>
+
+    <div class="tiles" id="tuiles">
+      <button class="tile hot" data-go="notions"><b>Importer un cours</b><span>Photo du cours ou du tableau, PowerPoint, PDF, Word ou texte.</span></button>
+      <button class="tile" data-go="blanche"><b>Feuille blanche</b><span>Écris tout ce dont tu te souviens, puis vérifie. La méthode qui fait le plus retenir.</span></button>
+      <button class="tile" data-go="planning"><b>Mon planning</b><span id="tuile-plan">Tes échéances, tes coefficients et tes révisions de la semaine.</span></button>
     </div>
 
     <div id="seance" hidden style="display:flex;flex-direction:column;gap:16px">
@@ -157,7 +187,7 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 
     <div class="card" id="reglages">
       <h3>Réglages</h3>
-      <div class="row"><label for="exam"><b>Date du partiel</b></label><input type="date" id="exam"><span class="muted">À l'approche du partiel, les notions reviennent plus souvent.</span></div>
+      <div class="row"><label for="exam"><b>Date du partiel</b></label><input type="date" id="exam"><span class="muted">Pour toutes les matières sans date. Une date par matière se règle dans « Mon planning ».</span></div>
       <div class="tools">
         <div class="group"><span class="muted">Durée par jour</span><span class="seg2" id="minutes"><button data-m="5">5 min</button><button data-m="10" class="on">10 min</button><button data-m="15">15 min</button></span></div>
         <div class="group"><span class="muted">Taille</span><button id="moins" aria-label="Texte plus petit">A−</button><button id="plus" aria-label="Texte plus grand">A+</button></div>
@@ -166,13 +196,66 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
     </div>
   </section>
 
+  <!-- ===== Feuille blanche ===== -->
+  <section id="tab-blanche" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card">
+      <h2>Feuille blanche</h2>
+      <p class="muted">Sans regarder ton cours, écris tout ce dont tu te souviens. Puis appuie sur « Vérifier » : tu vois ce que tu as retrouvé et ce qui manque. Les fautes d'orthographe ne comptent pas.</p>
+      <div class="row"><label for="fb-mat"><b>Matière</b></label><select id="fb-mat" style="flex:1 1 200px"></select>
+        <span class="seg2" id="fb-mode"><button data-m="tout" class="on">Tout le cours</button><button data-m="une">Explique une notion</button></span></div>
+      <p class="msg ok" id="fb-prompt" hidden></p>
+      <textarea id="fb-text" style="min-height:220px;font-size:var(--size)" placeholder="Écris ici, avec tes mots…"></textarea>
+      <div class="row"><button class="primary" id="fb-check">Vérifier</button><button id="fb-voice" hidden>Dicter au lieu d'écrire</button><span class="muted" id="fb-voice-t"></span></div>
+    </div>
+    <div class="card" id="fb-res" hidden>
+      <h2 id="fb-score"></h2>
+      <p class="muted" id="fb-sub"></p>
+      <div id="fb-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="row"><button class="primary" id="fb-miss">Recommencer avec ce qui manque</button><button id="fb-zero">Recommencer de zéro</button><button id="fb-rev">Mettre les oubliés en révision</button></div>
+    </div>
+  </section>
+
+  <!-- ===== Mon planning ===== -->
+  <section id="tab-planning" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card">
+      <h2>Je veux réviser et retenir…</h2>
+      <div class="seg2" id="hz-def"><button data-hz="court">À court terme</button><button data-hz="moyen" class="on">À moyen terme</button><button data-hz="long">À très long terme</button></div>
+      <p class="muted"><b>Court terme</b> : jusqu'à l'examen, puis on arrête. <b>Moyen terme</b> : quelques mois. <b>Très long terme</b> : des années, avec des révisions plus espacées mais qui continuent.</p>
+    </div>
+    <div class="card">
+      <h2>Mes matières</h2>
+      <p class="muted">Quand dois-tu avoir fini d'apprendre ? Combien compte la matière ? Les matières qui comptent le plus et dont l'examen approche passent en premier.</p>
+      <div id="mats"></div>
+    </div>
+    <div class="card">
+      <h2>Ce qui ne bouge pas</h2>
+      <p class="muted">Sport, travail, rendez-vous, ou ce que tu as envie de faire. Le planning ne met pas de révision à ces moments-là.</p>
+      <div id="acts" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div class="row">
+        <select id="act-day" aria-label="Jour"></select>
+        <input type="time" id="act-from" value="18:00" aria-label="Début"><span>à</span><input type="time" id="act-to" value="19:30" aria-label="Fin">
+        <input type="text" id="act-label" placeholder="Par exemple : Foot" style="flex:1 1 160px" aria-label="Activité">
+        <button id="act-add">Ajouter</button>
+      </div>
+      <div class="row"><b>Je peux réviser</b><span>en semaine de</span><input type="time" id="win-wk-a"><span>à</span><input type="time" id="win-wk-b"><span>le week-end de</span><input type="time" id="win-we-a"><span>à</span><input type="time" id="win-we-b"></div>
+    </div>
+    <div class="card">
+      <h2>Ma semaine</h2>
+      <p class="muted">Le temps de chaque matière dépend de ce qui est à revoir, de la difficulté de chaque notion, du coefficient et de l'échéance. Pause de 5 minutes toutes les 25 minutes.</p>
+      <div id="plan"></div>
+    </div>
+  </section>
+
   <!-- ===== Mes notions ===== -->
   <section id="tab-notions" hidden style="display:flex;flex-direction:column;gap:20px">
     <div class="card" id="imp-card">
       <h2>Importer un cours</h2>
-      <p class="muted">Pour un cours pris sans Écoute : un fichier Word, PDF ou texte, ou un texte copié. Rien n'est envoyé : le fichier est lu sur cet appareil.</p>
-      <div class="row"><label for="imp-mat"><b>Matière</b></label><input type="text" id="imp-mat" placeholder="Par exemple : Droit civil" style="flex:1 1 220px"></div>
-      <div class="row"><label class="btn" for="imp-file" tabindex="0">Choisir un fichier (Word, PDF, texte)</label><input type="file" id="imp-file" accept=".docx,.pdf,.txt,.md,text/plain" hidden><span class="muted" id="imp-file-t"></span></div>
+      <p class="muted">Pour un cours pris sans Écoute : une photo (du cours, d'un polycopié ou du tableau), un PowerPoint, un fichier Word, PDF ou texte, ou un texte copié. Le fichier est lu sur cet appareil.</p>
+      <div class="row"><label for="imp-mat"><b>Matière</b></label><input type="text" id="imp-mat" list="mat-list" placeholder="Par exemple : Droit civil" style="flex:1 1 220px"><datalist id="mat-list"></datalist></div>
+      <div class="row">
+        <label class="btn" for="imp-photo" tabindex="0">Prendre une photo</label><input type="file" id="imp-photo" accept="image/*" capture="environment" hidden>
+        <label class="btn" for="imp-file" tabindex="0">Choisir un fichier</label><input type="file" id="imp-file" accept=".docx,.pdf,.pptx,.txt,.md,text/plain,image/*" hidden>
+        <span class="muted" id="imp-file-t">Photo, PowerPoint (.pptx), Word (.docx), PDF ou texte.</span></div>
       <textarea id="imp-text" placeholder="Ou colle ton cours ici"></textarea>
       <div class="row"><button class="primary" id="imp-read">Lire le cours</button></div>
     </div>
@@ -224,7 +307,7 @@ const DAY = 864e5, KEY = "alto-apprendre-v1";
 const STOP = new Set("le la les un une des du de d l au aux et ou en est sont a à ce cette ces qui que quoi dont où se sa son ses leur leurs il elle ils elles on nous vous je tu pour par sur dans avec sans pas plus mais donc car ne y c s n qu lui être avoir fait faire comme tout tous très aussi".split(" "));
 
 /* ---------- Données ---------- */
-let db = {notions: [], exam: "", minutes: 10, day: "", newToday: 0};
+let db = {notions: [], exam: "", minutes: 10, day: "", newToday: 0, mats: {}, hz: "moyen", acts: [], win: {wk: ["17:00", "21:00"], we: ["10:00", "18:00"]}};
 try { const o = JSON.parse(localStorage.getItem(KEY) || "null"); if (o) db = Object.assign(db, o); } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
 const today = () => new Date().toISOString().slice(0, 10);
@@ -258,7 +341,20 @@ function makeNotion(text, mark, src) {
 const clampD = d => Math.min(10, Math.max(1, d));
 const retr = (n, now) => n.last ? Math.pow(1 + (now - n.last) / DAY / (9 * Math.max(n.S, 0.1)), -1) : 0;
 function examTime() { return db.exam ? Date.parse(db.exam + "T08:00:00") : 0; }
-function aim(now) { const ex = examTime(); if (!ex) return 0.9; const d = (ex - now) / DAY; return d >= 0 && d <= 7 ? 0.95 : 0.9; }
+
+/* Chaque matière a : une échéance (quand avoir fini d'apprendre), un coefficient, un objectif (court, moyen, très long terme) */
+const matOf = n => n.mat || (n.src ? n.src.split(" · ")[0] : "") || "Sans matière";
+const matInfo = m => Object.assign({coef: 1, due: "", hz: db.hz || "moyen"}, db.mats[m] || {});
+const dueTime = m => { const d = matInfo(m).due || db.exam; return d ? Date.parse(d + "T08:00:00") : 0; };
+const finished = (n, now) => { const m = matOf(n), ex = dueTime(m); return matInfo(m).hz === "court" && ex && now > ex + DAY / 2; };   // court terme : après l'examen, on arrête
+const urgency = (m, now) => { const ex = dueTime(m); if (!ex || ex < now) return 1; return 1 + 3 / (1 + (ex - now) / DAY); };
+const weight = (m, now) => matInfo(m).coef * urgency(m, now);
+const secFor = n => 10 + 3 * n.D;                  // une notion difficile prend plus de temps : de 13 à 40 secondes
+function aim(n, now) {
+  const m = matOf(n), hz = matInfo(m).hz, ex = dueTime(m);
+  const base = hz === "long" ? 0.85 : 0.9;         // très long terme : révisions plus espacées, mais qui continuent
+  if (!ex) return base; const d = (ex - now) / DAY; return d >= 0 && d <= 7 ? 0.95 : base;
+}
 const daysFor = (S, r) => 9 * S * (1 / r - 1);
 function preview(n, g, now) {                 // ce que donnerait la réponse g, sans rien changer
   const c = Object.assign({}, n); schedule(c, g, now); return c;
@@ -278,8 +374,8 @@ function schedule(n, g, now) {
     }
   }
   n.reps++; n.last = now;
-  let days = g === 1 ? 0 : Math.max(0.6, daysFor(n.S, aim(now)));
-  const ex = examTime();
+  let days = g === 1 ? 0 : Math.max(0.6, daysFor(n.S, aim(n, now)));
+  const ex = dueTime(matOf(n));
   if (ex && now < ex && now + days * DAY > ex - DAY / 2) days = Math.max(0.6, (ex - DAY - now) / DAY);   // revoir la veille du partiel
   n.due = g === 1 ? now : now + days * DAY;
 }
@@ -288,24 +384,37 @@ const when = ms => { const d = (ms - Date.now()) / DAY;
   if (d < 60) return `dans ${Math.round(d / 7)} semaines`; return `dans ${Math.round(d / 30)} mois`; };
 
 /* ---------- La révision du jour : ce qui s'oublie le plus, sans dépasser le temps choisi ---------- */
-const SEC_PER = 20, NEW_MAX = 10;
+const NEW_MAX = 10;
+/* Combien de nouvelles notions par jour pour une matière : assez pour tout avoir vu 2 jours avant l'échéance */
+function newPerDay(m, now) {
+  const fresh = db.notions.filter(n => !n.last && matOf(n) === m).length; if (!fresh) return 0;
+  const ex = dueTime(m); if (!ex || ex < now) return Math.min(fresh, NEW_MAX);
+  return Math.ceil(fresh / Math.max(1, (ex - now) / DAY - 2));
+}
+function newQuota(now) { let q = 0; new Set(db.notions.map(matOf)).forEach(m => { q += newPerDay(m, now); }); return Math.min(30, Math.max(NEW_MAX, q)); }
 function todayQueue(now = Date.now()) {
-  const max = Math.max(3, Math.floor(db.minutes * 60 / SEC_PER));
+  const budget = Math.max(60, db.minutes * 60);
   const end = new Date(); end.setHours(23, 59, 59, 999);
-  const due = db.notions.filter(n => n.last && n.due <= end.getTime()).sort((a, b) => retr(a, now) - retr(b, now));
-  const fresh = db.notions.filter(n => !n.last).sort((a, b) => (b.mark === "dif" || b.mark === "q") - (a.mark === "dif" || a.mark === "q") || a.created - b.created)
-    .slice(0, Math.max(0, NEW_MAX - db.newToday));
-  return due.concat(fresh).slice(0, max);
+  const live = db.notions.filter(n => !finished(n, now));
+  // d'abord ce qui s'oublie le plus, dans les matières qui comptent le plus et dont l'examen approche
+  const due = live.filter(n => n.last && n.due <= end.getTime()).sort((a, b) => (1 - retr(b, now)) * weight(matOf(b), now) - (1 - retr(a, now)) * weight(matOf(a), now));
+  const fresh = live.filter(n => !n.last).sort((a, b) => weight(matOf(b), now) - weight(matOf(a), now) || (b.mark === "dif" || b.mark === "q") - (a.mark === "dif" || a.mark === "q") || a.created - b.created)
+    .slice(0, Math.max(0, newQuota(now) - db.newToday));
+  const out = []; let t = 0;
+  for (const n of due.concat(fresh)) { if (t + secFor(n) > budget && out.length >= 3) break; out.push(n); t += secFor(n); }
+  return out;
 }
 function renderToday() {
   const q = todayQueue(), n = q.length;
+  const exs = [...new Set(db.notions.map(matOf))].map(m => [m, dueTime(m)]).filter(x => x[1] > Date.now()).sort((a, b) => a[1] - b[1]);
+  $("tuile-plan").textContent = exs.length ? `Prochaine échéance : ${exs[0][0]}, ${when(exs[0][1])}.` : "Ajoute tes échéances et tes coefficients : le planning se fait tout seul.";
   $("vide").hidden = !!db.notions.length; $("jour-go").hidden = !db.notions.length;
   if (!db.notions.length) { $("jour-titre").textContent = "Rien à réviser pour l'instant"; $("jour-sous").textContent = "Importe un cours (Word, PDF ou texte), ou prends un cours avec Écoute : les passages marqués arrivent ici tout seuls."; return; }
   if (!n) { const next = Math.min(...db.notions.map(x => x.due || Infinity)); $("jour-titre").textContent = "Tout est à jour"; $("jour-sous").textContent = "Reviens " + when(next) + ". Ton cerveau a besoin de temps pour oublier un peu."; $("go").disabled = true; $("jour-suite").textContent = ""; return; }
-  const min = Math.max(1, Math.round(n * SEC_PER / 60));
+  const min = Math.max(1, Math.round(q.reduce((s, x) => s + secFor(x), 0) / 60));
   $("jour-titre").textContent = `${n} notion${n > 1 ? "s" : ""}, ${min} minute${min > 1 ? "s" : ""}`;
   $("jour-sous").textContent = "Arrête-toi quand tu veux. Ce que tu ne fais pas aujourd'hui revient demain.";
-  const ex = examTime(); $("jour-suite").textContent = ex && ex > Date.now() ? `Partiel ${when(ex)}` : "";
+  $("jour-suite").textContent = exs.length ? `${exs[0][0]} : examen ${when(exs[0][1])}` : "";
   $("go").disabled = false;
 }
 
@@ -337,7 +446,7 @@ let queue = [], idx = 0, done = 0, stats = {1: 0, 2: 0, 3: 0}, shown = false;
 function startSession() {
   queue = todayQueue(); idx = 0; done = 0; stats = {1: 0, 2: 0, 3: 0};
   if (!queue.length) return;
-  $("accueil").hidden = true; $("bilan").hidden = true; $("reglages").hidden = true; $("seance").hidden = false; showCard();
+  $("accueil").hidden = true; $("tuiles").hidden = true; $("bilan").hidden = true; $("reglages").hidden = true; $("seance").hidden = false; showCard();
 }
 function showCard() {
   const n = queue[idx]; shown = false;
@@ -372,7 +481,7 @@ $("go").addEventListener("click", startSession);
 $("voir").addEventListener("click", reveal);
 document.querySelectorAll(".grades button").forEach(b => b.addEventListener("click", () => grade(Number(b.dataset.g))));
 $("quit").addEventListener("click", endSession);
-$("bilan-ok").addEventListener("click", () => { $("bilan").hidden = true; $("accueil").hidden = false; });
+$("bilan-ok").addEventListener("click", () => { $("bilan").hidden = true; $("accueil").hidden = false; $("tuiles").hidden = false; });
 document.addEventListener("keydown", e => {
   if ($("seance").hidden || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
   if (e.key === " " || e.key === "Enter") { if (!shown) { e.preventDefault(); reveal(); } }
@@ -458,23 +567,61 @@ async function readFile(f) {
     }
     return out;
   }
+  if (name.endsWith(".pptx")) return readPptx(await f.arrayBuffer());
+  if (name.endsWith(".ppt")) throw new Error("ancien format PowerPoint");
+  if (/^image\//.test(f.type) || /\.(jpe?g|png|heic|webp)$/.test(name)) return readPhoto(f);
   if (name.endsWith(".doc")) throw new Error("ancien format Word");
   return await f.text();
 }
-$("imp-file").addEventListener("change", async () => {
-  const f = $("imp-file").files[0]; if (!f) return;
+/* PowerPoint (.pptx) : c'est un fichier zip. On lit le texte de chaque diapositive, dans l'ordre. */
+async function unzip(buf, keep) {
+  const dv = new DataView(buf), td = new TextDecoder(), out = {};
+  let e = -1; for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error("zip");
+  let p = dv.getUint32(e + 16, true); const count = dv.getUint16(e + 10, true);
+  for (let k = 0; k < count; k++) {
+    const method = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    const nm = td.decode(new Uint8Array(buf, p + 46, nl)); p += 46 + nl + el + cl;
+    if (!keep(nm)) continue;
+    const data = new Uint8Array(buf, off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true), size);
+    const bytes = method === 0 ? data : new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+    out[nm] = td.decode(bytes);
+  }
+  return out;
+}
+async function readPptx(buf) {
+  const files = await unzip(buf, n => /^ppt\/slides\/slide\d+\.xml$/.test(n));
+  const ent = s => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+  return Object.keys(files).sort((a, b) => parseInt(a.match(/\d+/)) - parseInt(b.match(/\d+/))).map(k =>
+    files[k].split("</a:p>").map(par => (par.match(/<a:t>([^<]*)<\/a:t>/g) || []).map(t => ent(t.slice(5, -6))).join("")).filter(x => x.trim()).join("\n")
+  ).join("\n\n");
+}
+/* Photo : la reconnaissance du texte se fait sur l'appareil (Tesseract). La première fois, l'outil se télécharge (quelques Mo). */
+async function readPhoto(f) {
+  if (typeof Tesseract === "undefined") await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");
+  const r = await Tesseract.recognize(f, "fra", {logger: m => { if (m.status === "recognizing text") $("imp-file-t").textContent = "Je lis la photo… " + Math.round(m.progress * 100) + " %"; }});
+  return r.data.text;
+}
+async function takeFile(input) {
+  const f = input.files[0]; if (!f) return;
   $("imp-file-t").textContent = "Lecture de « " + f.name + " »…";
   try {
     const t = await readFile(f);
-    $("imp-text").value = t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-    if (!$("imp-mat").value) $("imp-mat").value = f.name.replace(/\.[^.]+$/, "");
-    $("imp-file-t").textContent = "« " + f.name + " » est lu. Vérifie le texte, puis appuie sur « Lire le cours ».";
+    const prev = $("imp-text").value.trim();     // plusieurs photos à la suite : le texte s'ajoute
+    $("imp-text").value = (prev ? prev + "\n\n" : "") + t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (!$("imp-mat").value && !/^image\//.test(f.type)) $("imp-mat").value = f.name.replace(/\.[^.]+$/, "");
+    $("imp-file-t").textContent = /^image\//.test(f.type) ? "Photo lue. Vérifie le texte (la lecture d'une photo peut faire des erreurs), ajoute une autre photo ou appuie sur « Lire le cours »." : "« " + f.name + " » est lu. Vérifie le texte, puis appuie sur « Lire le cours ».";
   } catch (e) {
-    $("imp-file-t").textContent = (e.message === "ancien format Word" ? "Ce fichier Word est trop ancien (.doc). Enregistre-le en .docx dans Word, puis réessaie." : "Ce fichier n'a pas pu être lu. Copie le texte du cours et colle-le dans la case.");
+    $("imp-file-t").textContent = e.message === "ancien format Word" ? "Ce fichier Word est trop ancien (.doc). Enregistre-le en .docx dans Word, puis réessaie."
+      : e.message === "ancien format PowerPoint" ? "Ce PowerPoint est trop ancien (.ppt). Enregistre-le en .pptx, puis réessaie."
+      : "Ce fichier n'a pas pu être lu. Copie le texte du cours et colle-le dans la case.";
   }
-  $("imp-file").value = "";
+  input.value = "";
+}
+["imp-file", "imp-photo"].forEach(id => {
+  $(id).addEventListener("change", () => takeFile($(id)));
+  $(id).previousElementSibling.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $(id).click(); } });
 });
-$("imp-file").previousElementSibling.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("imp-file").click(); } });
 const DEF = /\b(est|sont|désigne|désignent|signifie|correspond|consiste|représente|on appelle|se définit|c'est)\b|\s:\s/i;
 let picks = [];
 function splitSentences(text) {
@@ -515,6 +662,201 @@ $("pick-go").addEventListener("click", () => {
   note(`${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}. Elles sont dans ta révision du jour.`, "ok");
 });
 
+/* ---------- Vérifier les mots de l'élève (algorithme de pertinence) ----------
+   On compare les mots sans accents, au singulier, et on accepte une ou deux fautes de frappe :
+   une faute d'orthographe ne doit pas compter comme une erreur de connaissance. */
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const stem = w => { w = w.replace(/[sx]$/, ""); return w.length > 5 ? w.replace(/(ement|ment|ee|e)$/, "") : w; };
+const wordsOf = s => norm(s).split(/[^a-z0-9]+/).filter(w => w.length > 1).map(stem);
+function lev(a, b) {
+  const d = Array.from({length: b.length + 1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) { let prev = d[0]; d[0] = i;
+    for (let j = 1; j <= b.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; } }
+  return d[b.length];
+}
+function found(set, word) {
+  return norm(word).split(/[^a-z0-9]+/).filter(w => w.length > 1).every(r => { const t = stem(r); if (set.has(t)) return true;
+    const tol = r.length >= 8 ? 2 : r.length >= 4 ? 1 : 0; if (!tol) return false;
+    for (const s of set) if (Math.abs(s.length - t.length) <= tol && lev(s, t) <= tol) return true; return false; });
+}
+const core = w => (w.match(/^[^\p{L}\p{N}]*(?:(?:[lLdDjJnNsScCmMtT]|[qQ]u)['’])?(.*?)[^\p{L}\p{N}]*$/u) || ["", w])[1];
+const holeWords = n => { const t = tokens(n.text); return n.holes.map(i => core(t[i] || "")).filter(Boolean); };
+const keyWords = n => { const t = tokens(n.text), h = new Set(n.holes), seen = new Set();
+  return t.map((w, i) => h.has(i) ? "" : core(w)).filter(w => { const c = clean(w); if (c.length < 4 || STOP.has(c) || seen.has(c)) return false; seen.add(c); return true; }); };
+
+/* ---------- Feuille blanche ---------- */
+let fb = {mode: "tout", all: [], targets: [], miss: [], one: null};
+const matsWithNotions = () => [...new Set(db.notions.map(matOf))].sort();
+function fbFill() {
+  const s = $("fb-mat"), cur = s.value; s.replaceChildren();
+  matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = o.textContent = m; s.append(o); });
+  if (cur && [...s.options].some(o => o.value === cur)) s.value = cur;
+}
+function fbStart(targets) {
+  fb.all = db.notions.filter(n => matOf(n) === $("fb-mat").value);
+  fb.targets = targets || fb.all; $("fb-text").value = ""; $("fb-res").hidden = true; const p = $("fb-prompt"); p.hidden = false;
+  if (!fb.all.length) { p.textContent = "Ajoute d'abord un cours dans « Mes cours »."; $("fb-check").disabled = true; return; }
+  $("fb-check").disabled = false;
+  if (fb.mode === "une") {
+    const pool = fb.targets.filter(n => keyWords(n).length >= 2); fb.one = pool[Math.floor(Math.random() * pool.length)] || fb.targets[0];
+    p.textContent = `Explique avec tes mots : « ${holeWords(fb.one).join(" ")} »`;
+  } else p.textContent = `${fb.targets.length} notion${fb.targets.length > 1 ? "s" : ""} à retrouver en ${$("fb-mat").value}. Écris tout ce que tu sais, dans le désordre si tu veux.`;
+  $("fb-text").focus();
+}
+function fbCheck() {
+  const said = new Set(wordsOf($("fb-text").value));
+  if (!said.size) { note("Écris d'abord ce dont tu te souviens.", "warn"); return; }
+  const box = $("fb-list"); box.replaceChildren(); fb.miss = [];
+  if (fb.mode === "une") {
+    const n = fb.one, kw = keyWords(n), ok = kw.filter(w => found(said, w));
+    const pc = kw.length ? ok.length / kw.length : 0;
+    $("fb-score").textContent = pc >= 0.6 ? "Bien expliqué !" : pc >= 0.3 ? "C'est un début" : "Il manque l'essentiel";
+    $("fb-sub").textContent = `Tu as utilisé ${ok.length} des ${kw.length} idées clés. Ce n'est pas la seule façon de bien dire : relis la phrase du cours et compare.`;
+    const r = document.createElement("div"); r.className = "res " + (pc >= 0.6 ? "ok" : "no"); r.append(holeHTML(n, true));
+    const k = document.createElement("div"); kw.forEach(w => { const s = document.createElement("span"); s.className = "kw " + (ok.includes(w) ? "ok" : "no"); s.textContent = w; k.append(s); });
+    box.append(r, k); if (pc < 0.6) fb.miss = [n];
+    $("fb-miss").textContent = "Une autre notion"; $("fb-zero").textContent = "Réessayer celle-ci";
+  } else {
+    const res = fb.targets.map(n => [n, holeWords(n).every(w => found(said, w))]);
+    const got = res.filter(x => x[1]).length; fb.miss = res.filter(x => !x[1]).map(x => x[0]);
+    $("fb-score").textContent = `${got} sur ${res.length} retrouvée${got > 1 ? "s" : ""}`;
+    $("fb-sub").textContent = fb.miss.length ? "En rouge, ce qui manque. Relis-le, puis recommence : c'est en cherchant qu'on retient." : "Tout y est. Bravo !";
+    res.sort((a, b) => a[1] - b[1]).forEach(([n, ok]) => { const r = document.createElement("div"); r.className = "res " + (ok ? "ok" : "no"); r.append(ok ? "✓ " : "✗ ", holeHTML(n, true)); box.append(r); });
+    $("fb-miss").textContent = "Recommencer avec ce qui manque"; $("fb-zero").textContent = "Recommencer de zéro";
+    $("fb-miss").hidden = !fb.miss.length;
+  }
+  $("fb-rev").hidden = !fb.miss.length; $("fb-res").hidden = false; $("fb-res").scrollIntoView({block: "start", behavior: "smooth"});
+}
+$("fb-check").addEventListener("click", fbCheck);
+$("fb-mat").addEventListener("change", () => fbStart());
+document.querySelectorAll("#fb-mode button").forEach(b => b.addEventListener("click", () => {
+  fb.mode = b.dataset.m; document.querySelectorAll("#fb-mode button").forEach(x => x.classList.toggle("on", x === b)); $("fb-miss").hidden = false; fbStart();
+}));
+$("fb-miss").addEventListener("click", () => fb.mode === "une" ? fbStart() : fbStart(fb.miss));
+$("fb-zero").addEventListener("click", () => { if (fb.mode === "une") { $("fb-text").value = ""; $("fb-res").hidden = true; $("fb-text").focus(); } else fbStart(); });
+$("fb-rev").addEventListener("click", () => {
+  fb.miss.forEach(n => { n.due = Date.now(); if (n.last) n.D = clampD(n.D + 0.5); }); save(); renderToday();
+  note(`${fb.miss.length} notion${fb.miss.length > 1 ? "s" : ""} ajoutée${fb.miss.length > 1 ? "s" : ""} à la révision du jour.`, "ok"); $("fb-rev").hidden = true;
+});
+/* Dicter au lieu d'écrire (si le navigateur le permet) */
+{ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) { let rec = null; $("fb-voice").hidden = false;
+    $("fb-voice").addEventListener("click", () => {
+      if (rec) { rec.stop(); return; }
+      rec = new SR(); rec.lang = "fr-FR"; rec.continuous = true;
+      rec.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) $("fb-text").value += (/\S$/.test($("fb-text").value) ? " " : "") + e.results[i][0].transcript.trim(); };
+      rec.onend = () => { rec = null; $("fb-voice").textContent = "Dicter au lieu d'écrire"; $("fb-voice-t").textContent = ""; };
+      rec.start(); $("fb-voice").textContent = "Arrêter la dictée"; $("fb-voice-t").textContent = "Je t'écoute…";
+    }); } }
+
+/* ---------- Mon planning ----------
+   Pour chaque jour de la semaine : le temps libre (plage de révision moins les activités),
+   puis le travail de chaque matière (notions à revoir × leur difficulté + nouvelles notions),
+   rangé par importance (coefficient × proximité de l'échéance). */
+const WD = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const COL = ["#1E7A45", "#FFC81F", "#5B34D6", "#F26A1F", "#1A5FD0", "#C8216A"];
+const toMin = t => { const [h, m] = (t || "0:0").split(":").map(Number); return h * 60 + (m || 0); };
+const hm = m => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const colOf = m => COL[matsWithNotions().indexOf(m) % COL.length] || COL[0];
+function setMat(m, k, v) { db.mats[m] = Object.assign(matInfo(m), {[k]: v}); save(); renderPlan(); renderToday(); }
+function renderMats() {
+  const box = $("mats"); box.replaceChildren(); const ms = matsWithNotions();
+  if (!ms.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Importe un cours : ses matières apparaîtront ici."; box.append(p); return; }
+  const h = document.createElement("div"); h.className = "mrow head"; ["Matière", "Fini d'apprendre le", "Coefficient", "Je veux retenir"].forEach(t => { const s = document.createElement("span"); s.textContent = t; h.append(s); }); box.append(h);
+  ms.forEach(m => {
+    const i = matInfo(m), r = document.createElement("div"); r.className = "mrow";
+    const nm = document.createElement("b"); const d = document.createElement("span"); d.className = "dot"; d.style.background = colOf(m); nm.append(d, m);
+    const cnt = db.notions.filter(n => matOf(n) === m), fr = cnt.filter(n => !n.last).length;
+    const sub = document.createElement("div"); sub.className = "muted"; sub.textContent = `${cnt.length} notion${cnt.length > 1 ? "s" : ""}` + (fr ? `, ${fr} nouvelle${fr > 1 ? "s" : ""}` : ""); const c1 = document.createElement("div"); c1.append(nm, sub);
+    const due = document.createElement("input"); due.type = "date"; due.value = i.due; due.setAttribute("aria-label", "Échéance " + m); due.addEventListener("change", () => setMat(m, "due", due.value));
+    const co = document.createElement("input"); co.type = "number"; co.min = "0.5"; co.max = "20"; co.step = "0.5"; co.value = i.coef; co.style.width = "80px"; co.setAttribute("aria-label", "Coefficient " + m); co.addEventListener("change", () => setMat(m, "coef", Math.max(0.5, Number(co.value) || 1)));
+    const hz = document.createElement("select"); hz.setAttribute("aria-label", "Objectif " + m);
+    [["court", "À court terme"], ["moyen", "À moyen terme"], ["long", "À très long terme"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; hz.append(o); });
+    hz.value = i.hz; hz.addEventListener("change", () => setMat(m, "hz", hz.value));
+    r.append(c1, due, co, hz); box.append(r);
+  });
+}
+function renderActs() {
+  const box = $("acts"); box.replaceChildren();
+  [...db.acts].sort((a, b) => a.day - b.day || toMin(a.from) - toMin(b.from)).forEach(a => {
+    const r = document.createElement("div"); r.className = "row";
+    const t = document.createElement("span"); t.textContent = `${WD[a.day]} · ${a.from}–${a.to} · ${a.label}`;
+    const x = document.createElement("button"); x.textContent = "Retirer"; x.addEventListener("click", () => { db.acts = db.acts.filter(y => y !== a); save(); renderActs(); renderPlan(); });
+    r.append(t, x); box.append(r);
+  });
+}
+function plan() {
+  const now = Date.now(), d0 = new Date(); d0.setHours(0, 0, 0, 0); const days = [];
+  const live = db.notions.filter(n => !finished(n, now)), ms = matsWithNotions();
+  for (let d = 0; d < 7; d++) {
+    const date = new Date(d0); date.setDate(d0.getDate() + d); const nx = new Date(date); nx.setDate(date.getDate() + 1);   // pas « + 24 h » : changement d'heure
+    const a0 = date.getTime(), a1 = nx.getTime(), wd = (date.getDay() + 6) % 7;
+    let [ws, we] = (wd >= 5 ? db.win.we : db.win.wk).map(toMin);
+    if (d === 0) { const nm = new Date(); ws = Math.max(ws, Math.ceil((nm.getHours() * 60 + nm.getMinutes()) / 5) * 5); }
+    const busy = db.acts.filter(x => x.day === wd).map(x => [toMin(x.from), toMin(x.to), x.label]).sort((x, y) => x[0] - y[0]);
+    const free = []; let c = ws; busy.forEach(([f, t]) => { if (f > c) free.push([c, Math.min(f, we)]); c = Math.max(c, t); }); if (c < we) free.push([c, we]);
+    // le travail de chaque matière ce jour-là
+    const work = ms.filter(m => !(matInfo(m).hz === "court" && dueTime(m) && dueTime(m) < a0)).map(m => {
+      const rev = live.filter(n => matOf(n) === m && n.last && (d === 0 ? n.due < a1 : n.due >= a0 && n.due < a1));
+      const ex = dueTime(m), left = ex ? (ex - a0) / DAY : 99;
+      let sec = rev.reduce((s, n) => s + secFor(n), 0) + newPerDay(m, a0) * 45;
+      const blank = left > 0 && left <= 3;                  // les 3 jours avant l'examen : une feuille blanche
+      if (blank) sec += 600;
+      return {m, min: Math.ceil(sec / 60), n: rev.length, blank, w: weight(m, a0), exam: ex >= a0 && ex < a1};
+    }).filter(x => x.min > 0 || x.exam).sort((x, y) => y.w - x.w);
+    // on range le travail dans le temps libre, avec une pause de 5 min toutes les 25 min
+    const items = busy.map(([f, t, l]) => ({f, t, type: "busy", label: l}));
+    let fi = 0, cur = free[0] ? free[0][0] : 0, run = 0, missing = 0;
+    work.forEach(x => { let need = x.min;
+      while (need > 0 && fi < free.length) {
+        if (cur >= free[fi][1]) { fi++; cur = free[fi] ? free[fi][0] : 0; run = 0; continue; }
+        if (run >= 25) { const p = Math.min(cur + 5, free[fi][1]); items.push({f: cur, t: p, type: "pause", label: "Pause"}); cur = p; run = 0; continue; }
+        const len = Math.min(need, 25 - run, free[fi][1] - cur); if (len <= 0) { fi++; cur = free[fi] ? free[fi][0] : 0; continue; }
+        items.push({f: cur, t: cur + len, type: "rev", m: x.m, label: x.m + (x.blank ? " · feuille blanche et révision" : x.n ? ` · ${x.n} notion${x.n > 1 ? "s" : ""} à revoir` : " · nouvelles notions")});
+        cur += len; run += len; need -= len;
+      }
+      missing += need;
+    });
+    days.push({date, wd, items: items.sort((x, y) => x.f - y.f), missing, exams: work.filter(x => x.exam).map(x => x.m)});
+  }
+  return days;
+}
+function renderPlan() {
+  const box = $("plan"); box.replaceChildren();
+  if (!db.notions.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Ton planning apparaîtra quand tu auras un cours à réviser."; box.append(p); return; }
+  plan().forEach((d, k) => {
+    const el = document.createElement("div"); el.className = "day";
+    const h = document.createElement("h3"); h.textContent = (k === 0 ? "Aujourd'hui · " : k === 1 ? "Demain · " : "") + d.date.toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"}); el.append(h);
+    d.exams.forEach(m => { const c = document.createElement("span"); c.className = "chip imp"; c.textContent = "Examen : " + m; el.append(c); });
+    const revs = d.items.filter(x => x.type !== "busy");
+    if (!revs.length && !d.missing) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Rien à réviser. Profite !"; el.append(p); }
+    d.items.forEach(x => {
+      const s = document.createElement("div"); s.className = "slot " + x.type;
+      const t = document.createElement("span"); t.className = "h"; t.textContent = hm(x.f) + "–" + hm(x.t);
+      const l = document.createElement("span"); if (x.m) { const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = colOf(x.m); l.append(dot); } l.append(x.label);
+      s.append(t, l); el.append(s);
+    });
+    if (k === 0 && !d.items.some(x => x.type !== "busy") && d.missing > 0) { const w = document.createElement("p"); w.className = "muted"; w.textContent = "Ta plage de révision est finie pour aujourd'hui : ce qui reste passe à demain."; el.append(w); }
+    else if (d.missing > 0) { const w = document.createElement("p"); w.className = "msg warn"; w.textContent = `Il manque ${d.missing} min ce jour-là. Élargis ta plage de révision, ou baisse un coefficient.`; el.append(w); }
+    box.append(el);
+  });
+}
+{ const s = $("act-day"); WD.forEach((w, i) => { const o = document.createElement("option"); o.value = i; o.textContent = w; s.append(o); }); }
+$("act-add").addEventListener("click", () => {
+  const a = {day: Number($("act-day").value), from: $("act-from").value, to: $("act-to").value, label: $("act-label").value.trim() || "Activité"};
+  if (toMin(a.to) <= toMin(a.from)) { note("L'heure de fin doit être après l'heure de début.", "warn"); return; }
+  db.acts.push(a); save(); $("act-label").value = ""; renderActs(); renderPlan();
+});
+[["win-wk-a", "wk", 0], ["win-wk-b", "wk", 1], ["win-we-a", "we", 0], ["win-we-b", "we", 1]].forEach(([id, k, i]) => {
+  $(id).value = db.win[k][i]; $(id).addEventListener("change", () => { db.win[k][i] = $(id).value; save(); renderPlan(); });
+});
+const setHz = v => { db.hz = v; save(); document.querySelectorAll("#hz-def button").forEach(b => b.classList.toggle("on", b.dataset.hz === v)); };
+document.querySelectorAll("#hz-def button").forEach(b => b.addEventListener("click", () => {
+  setHz(b.dataset.hz); matsWithNotions().forEach(m => { db.mats[m] = Object.assign(matInfo(m), {hz: b.dataset.hz}); }); save(); renderMats(); renderPlan(); renderToday();
+}));
+setHz(db.hz || "moyen");
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => { tab(b.dataset.go); if (b.dataset.go === "notions") $("imp-card").scrollIntoView({block: "start"}); }));
+
 /* ---------- Imprimer ---------- */
 document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click", () => {
   const list = b.dataset.print === "jour" ? todayQueue() : db.notions;
@@ -531,8 +873,11 @@ document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click
 /* ---------- Onglets, réglages ---------- */
 function tab(name) {
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  ["jour", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
-  if (name === "notions") renderList(); if (name === "jour") renderToday();
+  ["jour", "blanche", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
+  if (name === "notions") { renderList(); const dl = $("mat-list"); dl.replaceChildren(); matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = m; dl.append(o); }); }
+  if (name === "jour") renderToday();
+  if (name === "blanche") { fbFill(); fbStart(); }
+  if (name === "planning") { renderMats(); renderActs(); renderPlan(); }
 }
 document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => tab(b.dataset.tab)));
 function note(t, k) { const n = $("note"); if (!t) { n.hidden = true; return; } n.className = "msg " + (k || "ok"); n.textContent = t; n.hidden = false; clearTimeout(note.t); note.t = setTimeout(() => n.hidden = true, 5000); }
