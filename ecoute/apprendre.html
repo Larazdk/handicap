@@ -172,6 +172,15 @@ body{padding:24px}
 .side .tabs .ic{width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .side .tabs button[aria-selected=true] .ic{background:var(--hero);color:var(--ink-d)}
 .side .tabs .ic{display:none}   /* moins d'icônes : le texte suffit */
+.side .dep{display:flex;flex-direction:column}
+.side .dep::details-content{display:flex;flex-direction:column;gap:4px}
+.side .dep>button{align-self:stretch}
+.side .dep>summary{list-style:none;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 18px 6px;display:flex;align-items:center;gap:8px;border-radius:14px 0 0 14px}
+.side .dep>summary::-webkit-details-marker{display:none}
+.side .dep>summary::before{content:"";width:8px;height:8px;border-right:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+.side .dep[open]>summary::before{transform:rotate(45deg)}
+.side .dep>summary:hover{color:var(--ink)}
+.side .dep:not([open])>summary::after{content:attr(data-n);margin-left:auto;margin-right:16px;font-size:12px;letter-spacing:0;background:var(--card);border-radius:999px;padding:2px 8px}
 .side .grp{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 18px 2px;opacity:.85}
 .side .tabs button{padding-left:18px}
 .side .tabs button[aria-selected=true]{box-shadow:inset 5px 0 0 var(--lilas)}
@@ -196,6 +205,9 @@ button.primary:hover{filter:brightness(1.08)}
   .side .tabs button{border-radius:999px;min-height:46px;white-space:nowrap;padding:6px 14px 6px 6px}
   .side .tabs .ic{width:32px;height:32px}
   .side .grp{display:none}
+  .side .tabs{align-items:center}
+  .side .dep{flex-direction:row;flex:none;gap:6px}.side .dep>summary{display:none}
+  .side .dep::details-content{display:contents}
   .side .xp{margin:0}
   .main{padding:20px 16px 32px}
   .pt{font-size:34px}
@@ -214,17 +226,20 @@ button.primary:hover{filter:brightness(1.08)}
     <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav>
     <div class="tabs" role="tablist" aria-label="Sections">
       <button role="tab" aria-selected="true" data-tab="jour">Aujourd'hui</button>
-      <span class="grp" role="presentation">Apprendre</span>
-      <button role="tab" aria-selected="false" data-tab="notions">Mes cours</button>
-      <button role="tab" aria-selected="false" data-tab="blanche">Feuille blanche</button>
-      <button role="tab" aria-selected="false" data-tab="carte">Carte mentale</button>
-      <button role="tab" aria-selected="false" data-tab="discu">Discussion</button>
-      <span class="grp" role="presentation">Se tester</span>
-      <button role="tab" aria-selected="false" data-tab="jeux">Quiz et jeux</button>
-      <button role="tab" aria-selected="false" data-tab="examen">Examen blanc</button>
-      <span class="grp" role="presentation">S'organiser</span>
-      <button role="tab" aria-selected="false" data-tab="planning">Mon planning</button>
-      <button role="tab" aria-selected="false" data-tab="imprimer">Imprimer</button>
+      <details class="dep"><summary>Apprendre</summary>
+        <button role="tab" aria-selected="false" data-tab="notions">Mes cours</button>
+        <button role="tab" aria-selected="false" data-tab="blanche">Feuille blanche</button>
+        <button role="tab" aria-selected="false" data-tab="carte">Carte mentale</button>
+        <button role="tab" aria-selected="false" data-tab="discu">Discussion</button>
+      </details>
+      <details class="dep"><summary>Se tester</summary>
+        <button role="tab" aria-selected="false" data-tab="jeux">Quiz et jeux</button>
+        <button role="tab" aria-selected="false" data-tab="examen">Examen blanc</button>
+      </details>
+      <details class="dep"><summary>S'organiser</summary>
+        <button role="tab" aria-selected="false" data-tab="planning">Mon planning</button>
+        <button role="tab" aria-selected="false" data-tab="imprimer">Imprimer</button>
+      </details>
     </div>
     <div class="xp" id="xp" title="Ta progression"><img src="mascotte.png" alt="" width="40" height="29"><b id="xp-lvl">Niv. 1</b><span class="xpbar"><i id="xp-bar"></i></span><span class="muted" id="xp-n">0 XP</span><span class="plume" id="xp-pl">🪶 0</span></div>
   </aside>
@@ -1421,6 +1436,7 @@ document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click
 /* ---------- Onglets, réglages ---------- */
 function tab(name) {
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  document.querySelectorAll(".side .dep").forEach(d => { d.open = matchMedia("(max-width: 900px)").matches || !!d.querySelector(`[data-tab="${name}"]`); });
   { const t = document.querySelector(`[data-tab="${name}"]`).textContent.trim(), i = t.lastIndexOf(" "), h = $("page-t"); h.replaceChildren();
     const sw = document.createElement("span"); sw.className = "sw"; sw.textContent = i > 0 ? t.slice(i + 1) : t; h.append(i > 0 ? t.slice(0, i + 1) : "", sw); window.scrollTo(0, 0); }
   ["jour", "blanche", "jeux", "examen", "carte", "discu", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
@@ -1455,6 +1471,9 @@ try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { se
 { const added = importEcoute(); if (added > 0) note(`${added} passage${added > 1 ? "s" : ""} marqué${added > 1 ? "s" : ""} dans Écoute ${added > 1 ? "sont" : "est"} arrivé${added > 1 ? "s" : ""} dans ta révision.`, "ok"); }
 $("vide-imp").addEventListener("click", () => { tab("notions"); $("imp-card").scrollIntoView({block: "start"}); });
 renderTiles(); renderToday(); renderList(); renderXP();
+document.querySelectorAll(".side .dep").forEach(d => { const n = d.querySelectorAll("button").length; d.querySelector("summary").dataset.n = n;
+  d.addEventListener("toggle", () => { if (d.open && !matchMedia("(max-width: 900px)").matches) document.querySelectorAll(".side .dep").forEach(x => { if (x !== d) x.open = false; }); }); });
+if (matchMedia("(max-width: 900px)").matches) document.querySelectorAll(".side .dep").forEach(d => d.open = true);
 $("top-date").textContent = new Date().toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"});
 })();
 </script>
