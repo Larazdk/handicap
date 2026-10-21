@@ -130,6 +130,12 @@ body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
 .mcol{display:flex;flex-direction:column;gap:10px}
 .mcol button{justify-content:flex-start;text-align:left;border-radius:16px;padding:10px 14px;font-weight:400;font-size:17px;line-height:var(--lh)}
 .mcol button.sel{outline:3px solid var(--lilas)}
+/* Discussion */
+.thread{display:flex;flex-direction:column;gap:12px;max-height:56vh;overflow:auto}
+.bub{max-width:80%;border-radius:22px;padding:12px 16px;font-size:calc(var(--size) - 4px);line-height:var(--lh)}
+.bub.ia{background:var(--side);align-self:flex-start;border-radius:22px 22px 22px 6px}
+.bub.moi{background:var(--hero);align-self:flex-end;border-radius:22px 22px 6px 22px}
+.bub b.who{display:block;font-size:13px;color:var(--muted);margin-bottom:2px}
 /* Carte mentale */
 .cm-wrap{display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,2fr);gap:16px}
 @media (max-width:760px){.cm-wrap,.match{grid-template-columns:1fr}}
@@ -212,6 +218,7 @@ button.primary:hover{filter:brightness(1.08)}
       <button role="tab" aria-selected="false" data-tab="notions">Mes cours</button>
       <button role="tab" aria-selected="false" data-tab="blanche">Feuille blanche</button>
       <button role="tab" aria-selected="false" data-tab="carte">Carte mentale</button>
+      <button role="tab" aria-selected="false" data-tab="discu">Discussion</button>
       <span class="grp" role="presentation">Se tester</span>
       <button role="tab" aria-selected="false" data-tab="jeux">Quiz et jeux</button>
       <button role="tab" aria-selected="false" data-tab="examen">Examen blanc</button>
@@ -235,11 +242,8 @@ button.primary:hover{filter:brightness(1.08)}
       <div class="row" id="vide" hidden><button class="primary" id="vide-imp">Importer un cours</button><a class="btn" href="./">Prendre un cours avec Écoute</a></div>
     </div>
 
-    <div class="tiles" id="tuiles">
-      <button class="tile hot" data-go="notions"><b>Importer un cours</b><span>Photo du cours ou du tableau, PowerPoint, PDF, Word ou texte.</span></button>
-      <button class="tile" data-go="blanche"><b>Feuille blanche</b><span>Écris tout ce dont tu te souviens, puis vérifie. La méthode qui fait le plus retenir.</span></button>
-      <button class="tile" data-go="planning"><b>Mon planning</b><span id="tuile-plan">Tes échéances, tes coefficients et tes révisions de la semaine.</span></button>
-    </div>
+    <div id="pref" class="muted" style="font-weight:700" hidden></div>
+    <div class="tiles" id="tuiles"></div>
 
     <div id="seance" hidden style="display:flex;flex-direction:column;gap:16px">
       <div class="row" style="justify-content:space-between"><span class="muted" id="pos">1 sur 7</span><button id="quit">Arrêter là</button></div>
@@ -321,6 +325,24 @@ button.primary:hover{filter:brightness(1.08)}
       <div class="match"><div id="mt-l" class="mcol"></div><div id="mt-r" class="mcol"></div></div>
     </div>
     <div class="card" id="jx-end" hidden><h2 id="jx-end-t"></h2><p id="jx-end-s"></p><div class="row"><button class="primary" id="jx-again">Rejouer</button></div></div>
+  </section>
+
+  <!-- ===== Discussion d'apprentissage ===== -->
+  <section id="tab-discu" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card">
+      <p class="muted">Parle de ton cours avec une IA, comme avec un prof patient. Elle s'appuie seulement sur tes notions.</p>
+      <div class="row"><label for="dc-mat"><b>Matière</b></label><select id="dc-mat" style="flex:1 1 200px"></select></div>
+      <div class="seg2" id="dc-mode"><button data-m="exp" class="on">Explique-moi</button><button data-m="qst">Pose-moi des questions</button><button data-m="enf">Explique à un enfant</button></div>
+      <p class="muted" id="dc-help"></p>
+      <div class="row"><button class="primary" id="dc-go">Commencer la discussion</button><span class="chip" id="dc-chip"></span></div>
+    </div>
+    <div class="card" id="dc-chat" hidden>
+      <div id="dc-thread" class="thread"></div>
+      <p class="muted" id="dc-status"></p>
+      <p class="msg warn" id="dc-hard" hidden></p>
+      <textarea id="dc-in" placeholder="Écris ta réponse…"></textarea>
+      <div class="row"><button class="primary" id="dc-send">Envoyer</button><button id="dc-voice">Dicter</button><button id="dc-new">Nouvelle discussion</button></div>
+    </div>
   </section>
 
   <!-- ===== Examen blanc ===== -->
@@ -556,7 +578,7 @@ function todayQueue(now = Date.now()) {
 function renderToday() {
   const q = todayQueue(), n = q.length;
   const exs = [...new Set(db.notions.map(matOf))].map(m => [m, dueTime(m)]).filter(x => x[1] > Date.now()).sort((a, b) => a[1] - b[1]);
-  $("tuile-plan").textContent = exs.length ? `Prochaine échéance : ${exs[0][0]}, ${when(exs[0][1])}.` : "Ajoute tes échéances et tes coefficients : le planning se fait tout seul.";
+  if ($("tuile-plan")) $("tuile-plan").textContent = exs.length ? `Prochaine échéance : ${exs[0][0]}, ${when(exs[0][1])}.` : "Ajoute tes échéances et tes coefficients : le planning se fait tout seul.";
   $("vide").hidden = !!db.notions.length; $("jour-go").hidden = !db.notions.length;
   if (!db.notions.length) { $("jour-titre").textContent = "Rien à réviser pour l'instant"; $("jour-sous").textContent = "Importe un cours (Word, PDF ou texte), ou prends un cours avec Écoute : les passages marqués arrivent ici tout seuls."; return; }
   if (!n) { const next = Math.min(...db.notions.map(x => x.due || Infinity)); $("jour-titre").textContent = "Tout est à jour"; $("jour-sous").textContent = "Reviens " + when(next) + ". Ton cerveau a besoin de temps pour oublier un peu."; $("go").disabled = true; $("jour-suite").textContent = ""; return; }
@@ -810,7 +832,7 @@ $("pick-go").addEventListener("click", () => {
   const chosen = picks.filter(x => x.on); if (!chosen.length) { note("Surligne au moins une phrase.", "warn"); return; }
   const have = new Set(db.notions.map(n => n.text)); const src = ($("imp-mat").value.trim() || "Cours importé") + " · " + new Date().toLocaleDateString("fr-FR");
   let added = 0; chosen.forEach(x => { if (have.has(x.text)) return; db.notions.push(makeNotion(x.text, "imp", src)); have.add(x.text); added++; });
-  save(); renderList(); renderToday(); $("pick-card").hidden = true; $("imp-text").value = "";
+  save(); useTool("notions"); renderList(); renderToday(); $("pick-card").hidden = true; $("imp-text").value = "";
   note(`${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}. Elles sont dans ta révision du jour.`, "ok");
 });
 
@@ -1287,6 +1309,102 @@ $("ex-stop").addEventListener("click", () => { exSave(); exFinish("Examen arrêt
 $("ex-in").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("ex-next").click(); } });
 $("ex-lire").addEventListener("click", () => { const q = ex && ex.qs[ex.i]; if (q) speak(q.k === "ouv" ? $("ex-q").textContent : sayNotion(q.n, false)); });
 
+/* ---------- Visite personnalisée : les outils que l'élève utilise le plus passent en premier ---------- */
+db.use = db.use || {};
+const TOOLS = {
+  notions: ["Importer un cours", "Photo, PowerPoint, PDF, Word ou texte."],
+  blanche: ["Feuille blanche", "Écris tout ce dont tu te souviens, puis vérifie."],
+  discu: ["Discussion", "L'IA t'explique, te questionne, ou tu expliques à un enfant."],
+  carte: ["Carte mentale", "Tes idées, avec tes mots, en carte."],
+  jeux: ["Quiz et jeux", "QCM et jeu « Associer », sans chrono."],
+  examen: ["Examen blanc", "Comme le jour J, avec une note sur 20."],
+  planning: ["Mon planning", "Tes échéances et ta semaine."]
+};
+function useTool(k) { if (!TOOLS[k]) return; const u = db.use[k] || {n: 0, last: 0}; u.n++; u.last = Date.now(); db.use[k] = u; save(); }
+function renderTiles() {
+  const order = Object.keys(TOOLS).filter(k => !(k === "carte" && matchMedia("(max-width: 900px)").matches));
+  const sc = k => (db.use[k] ? db.use[k].n : 0) + (db.use[k] && Date.now() - db.use[k].last < 3 * DAY ? 3 : 0);
+  let ks = order.slice().sort((a, b) => sc(b) - sc(a) || order.indexOf(a) - order.indexOf(b));
+  if (!db.notions.length) ks = ["notions", ...ks.filter(k => k !== "notions")];
+  const box = $("tuiles"); box.replaceChildren();
+  ks.slice(0, 4).forEach((k, i) => { const b = document.createElement("button"); b.className = "tile" + (i === 0 ? " hot" : ""); b.dataset.go = k;
+    const t = document.createElement("b"); t.textContent = TOOLS[k][0]; const d = document.createElement("span"); d.textContent = TOOLS[k][1]; if (k === "planning") d.id = "tuile-plan";
+    b.append(t, d); b.addEventListener("click", () => { tab(k); if (k === "notions") $("imp-card").scrollIntoView({block: "start"}); }); box.append(b); });
+  const fav = ks.find(k => db.use[k] && db.use[k].n >= 3);
+  $("pref").hidden = !fav; if (fav) $("pref").textContent = "Tes outils préférés en premier. Celui que tu utilises le plus : " + TOOLS[fav][0] + ".";
+}
+
+/* ---------- Discussion d'apprentissage ----------
+   3 modes : l'IA explique ; l'IA pose des questions ; l'élève explique à un « enfant » joué par l'IA (méthode Feynman).
+   Moteurs, dans l'ordre : l'IA de Chrome sur l'appareil, Claude avec une clé, sinon on ouvre Claude.ai avec la demande prête. */
+const MODEL = "claude-haiku-4-5-20251001";
+const DC_BASE = "Tu aides un élève qui est peut-être dys ou TDAH. Français simple, phrases courtes, une idée par phrase, pas de Markdown. Appuie-toi seulement sur les notions données. Ne fais jamais de longs paragraphes. Encourage sans en faire trop.";
+const DC_MODES = {
+  exp: ["L'IA t'explique le cours, simplement, avec un exemple. Ensuite, elle te pose une petite question pour vérifier.", "Explique les notions une par une, en 3 à 4 phrases courtes, avec un exemple de la vie de tous les jours. Après chaque explication, pose une seule question simple pour vérifier que l'élève a compris, puis attends sa réponse."],
+  qst: ["L'IA te pose une question à la fois. Tu réponds. Elle te dit ce qui est juste, ce qui manque, puis passe à la suivante.", "Pose une seule question à la fois sur les notions, de la plus facile à la plus difficile. Attends la réponse. Ensuite : dis en une phrase ce qui est juste, en une phrase ce qui manque, puis pose la question suivante. Ne donne pas la réponse avant que l'élève ait essayé."],
+  enf: ["Tu expliques le cours à Léo, 10 ans, joué par l'IA. Il te demande « ça veut dire quoi ? » dès que tu utilises un mot compliqué. À la fin, il te dit ce qu'il a compris.", "Tu joues Léo, un enfant curieux de 10 ans. L'élève doit t'expliquer les notions. Réponds comme un enfant, en 1 ou 2 phrases. Si l'élève utilise un mot difficile ou un mot du cours sans l'expliquer, demande « ça veut dire quoi, … ? ». Si l'explication est fausse ou incomplète, pose une question naïve qui l'aide à corriger. Quand l'élève écrit « fini », sors du rôle et donne un bilan en 3 lignes : ce qui était clair, l'idée qui manquait, un mot à mieux expliquer."]
+};
+let dc = {mode: "exp", turns: [], sys: ""};
+const dcKey = () => { try { return localStorage.getItem("ni-cle") || ""; } catch (e) { return ""; } };
+async function dcEngine() {
+  let lm = "unavailable"; try { if (typeof LanguageModel !== "undefined") lm = await LanguageModel.availability({expectedInputs: [{type: "text", languages: ["fr"]}], expectedOutputs: [{type: "text", languages: ["fr"]}]}); } catch (e) {}
+  return lm !== "unavailable" ? "builtin" : dcKey() ? "api" : "copy";
+}
+function bubble2(role, text) { const d = document.createElement("div"); d.className = "bub " + (role === "user" ? "moi" : "ia");
+  const w = document.createElement("b"); w.className = "who"; w.textContent = role === "user" ? "Toi" : dc.mode === "enf" ? "Léo" : "Notéa"; const t = document.createElement("span"); t.textContent = text; d.append(w, t); $("dc-thread").append(d); $("dc-thread").scrollTop = 1e9; return t; }
+async function dcAsk() {
+  const eng = await dcEngine(); $("dc-status").textContent = "…"; $("dc-send").disabled = true;
+  try {
+    if (eng === "builtin") {
+      const o = {expectedInputs: [{type: "text", languages: ["fr"]}], expectedOutputs: [{type: "text", languages: ["fr"]}]};
+      const sess = await LanguageModel.create({...o, initialPrompts: [{role: "system", content: dc.sys}, ...dc.turns.slice(0, -1)]});
+      const t = bubble2("assistant", "…"); let out = "";
+      for await (const ch of sess.promptStreaming(dc.turns[dc.turns.length - 1].content, o)) { out = ch.startsWith(out) ? ch : out + ch; t.textContent = out; }
+      dc.turns.push({role: "assistant", content: out});
+    } else if (eng === "api") {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {method: "POST", headers: {"content-type": "application/json", "x-api-key": dcKey(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true"},
+        body: JSON.stringify({model: MODEL, max_tokens: 400, system: dc.sys, messages: dc.turns})});
+      if (!r.ok) throw new Error("Erreur " + r.status);
+      const j = await r.json(), out = (j.content || []).map(c => c.text || "").join("").trim(); bubble2("assistant", out); dc.turns.push({role: "assistant", content: out});
+    } else {
+      const text = dc.sys + "\n\n" + dc.turns.map(t => (t.role === "user" ? "Élève : " : "Toi : ") + t.content).join("\n\n");
+      try { await navigator.clipboard.writeText(text); } catch (e) {}
+      const p = document.createElement("p"); p.className = "msg warn"; const a = document.createElement("a"); a.href = "https://claude.ai/new?q=" + encodeURIComponent(text.slice(0, 6000)); a.target = "_blank"; a.rel = "noopener"; a.textContent = "Continuer la discussion dans Claude";
+      p.append("Pas d'IA sur cet appareil. ", a, " (la demande est copiée)."); $("dc-thread").append(p);
+    }
+    if (eng !== "copy" && onceToday("discu-" + dc.mode)) gain(5, "discussion");
+  } catch (e) { $("dc-status").textContent = "La réponse n'a pas pu venir : " + e.message; $("dc-send").disabled = false; return; }
+  $("dc-status").textContent = ""; $("dc-send").disabled = false; $("dc-in").focus();
+}
+function dcStart() {
+  const m = $("dc-mat").value, ns = db.notions.filter(n => !m || matOf(n) === m).slice(0, 25);
+  if (!ns.length) { note("Ajoute d'abord un cours dans « Mes cours ».", "warn"); return; }
+  dc.turns = []; dc.notions = ns; $("dc-thread").replaceChildren(); $("dc-chat").hidden = false; $("dc-hard").hidden = true;
+  dc.sys = DC_BASE + " " + DC_MODES[dc.mode][1] + "\n\nLes notions du cours" + (m ? " de " + m : "") + " :\n" + ns.map(n => "- " + n.text).join("\n");
+  const first = dc.mode === "enf" ? "Bonjour ! Je suis prêt à t'expliquer mon cours." : dc.mode === "qst" ? "Pose-moi la première question." : "Explique-moi la première notion.";
+  dc.turns.push({role: "user", content: first}); bubble2("user", first); dcAsk(); useTool("discu");
+}
+/* Mots difficiles : en mode « enfant », on signale les mots longs recopiés du cours sans être expliqués */
+function hardWords(text) {
+  const course = new Set(dc.notions.flatMap(n => wordsOf(n.text)).filter(w => w.length >= 7));
+  return [...new Set(norm(text).split(/[^a-z]+/).filter(w => w.length >= 8 && course.has(stem(w))))].slice(0, 4);
+}
+$("dc-send").addEventListener("click", () => {
+  const v = $("dc-in").value.trim(); if (!v) return; $("dc-in").value = "";
+  if (dc.mode === "enf") { const h = hardWords(v); $("dc-hard").hidden = !h.length; if (h.length) $("dc-hard").textContent = "Mots peut-être trop difficiles pour un enfant : " + h.join(", ") + ". Essaie de les dire autrement."; }
+  dc.turns.push({role: "user", content: v}); bubble2("user", v); dcAsk();
+});
+$("dc-in").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("dc-send").click(); } });
+$("dc-new").addEventListener("click", dcStart);
+$("dc-go").addEventListener("click", dcStart);
+function dcHelp() { $("dc-help").textContent = DC_MODES[dc.mode][0]; $("dc-in").placeholder = dc.mode === "enf" ? "Explique à Léo… (écris « fini » pour avoir ton bilan)" : "Écris ta réponse…"; }
+document.querySelectorAll("#dc-mode button").forEach(b => b.addEventListener("click", () => { dc.mode = b.dataset.m; document.querySelectorAll("#dc-mode button").forEach(x => x.classList.toggle("on", x === b)); dcHelp(); }));
+dcHelp();
+{ const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) $("dc-voice").hidden = true; else { let r = null;
+  $("dc-voice").addEventListener("click", () => { if (r) { r.stop(); return; } r = new SR(); r.lang = "fr-FR"; r.continuous = true;
+    r.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) $("dc-in").value += (/\S$/.test($("dc-in").value) ? " " : "") + e.results[i][0].transcript.trim(); };
+    r.onend = () => { r = null; $("dc-voice").textContent = "Dicter"; }; r.start(); $("dc-voice").textContent = "Arrêter la dictée"; }); } }
+
 /* ---------- Imprimer ---------- */
 document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click", () => {
   const list = b.dataset.print === "jour" ? todayQueue() : db.notions;
@@ -1305,9 +1423,11 @@ function tab(name) {
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
   { const t = document.querySelector(`[data-tab="${name}"]`).textContent.trim(), i = t.lastIndexOf(" "), h = $("page-t"); h.replaceChildren();
     const sw = document.createElement("span"); sw.className = "sw"; sw.textContent = i > 0 ? t.slice(i + 1) : t; h.append(i > 0 ? t.slice(0, i + 1) : "", sw); window.scrollTo(0, 0); }
-  ["jour", "blanche", "jeux", "examen", "carte", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
+  ["jour", "blanche", "jeux", "examen", "carte", "discu", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
   if (name === "notions") { renderList(); const dl = $("mat-list"); dl.replaceChildren(); matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = m; dl.append(o); }); }
-  if (name === "jour") renderToday();
+  if (name === "jour") { renderTiles(); renderToday(); }
+  if (name === "discu") { fillMats($("dc-mat")); dcEngine().then(e => { $("dc-chip").textContent = e === "builtin" ? "IA sur l'appareil" : e === "api" ? "IA : Claude (clé)" : "IA : via Claude.ai"; }); }
+  if (["blanche", "jeux", "examen", "carte", "planning"].includes(name)) useTool(name);
   if (name === "blanche") { fbFill(); fbStart(); }
   if (name === "jeux") fillMats($("jx-mat"));
   if (name === "examen") fillMats($("ex-mat"));
@@ -1334,7 +1454,7 @@ try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { se
 /* À chaque ouverture : les nouveaux passages marqués dans Écoute arrivent tout seuls */
 { const added = importEcoute(); if (added > 0) note(`${added} passage${added > 1 ? "s" : ""} marqué${added > 1 ? "s" : ""} dans Écoute ${added > 1 ? "sont" : "est"} arrivé${added > 1 ? "s" : ""} dans ta révision.`, "ok"); }
 $("vide-imp").addEventListener("click", () => { tab("notions"); $("imp-card").scrollIntoView({block: "start"}); });
-renderToday(); renderList(); renderXP();
+renderTiles(); renderToday(); renderList(); renderXP();
 $("top-date").textContent = new Date().toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"});
 })();
 </script>
