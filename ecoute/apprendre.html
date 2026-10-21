@@ -115,6 +115,27 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 .kw{display:inline-block;border-radius:999px;padding:2px 10px;margin:2px 4px 2px 0;font-size:15px;font-weight:700}
 .kw.ok{background:var(--good-bg);color:var(--good)} .kw.no{background:var(--bad-bg);color:var(--bad)}
 
+/* XP */
+.xp{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 6px 0 4px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+.xpbar{width:90px;height:8px;border-radius:9px;background:var(--side);overflow:hidden}.xpbar i{display:block;height:100%;width:0;background:var(--lilas);transition:width .4s}
+.plume{height:32px;padding:0 10px;border-radius:999px;background:#FFF3C4;color:#5C4300;font-weight:700;font-size:14px;display:inline-flex;align-items:center}
+body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
+/* Quiz et jeux */
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.choices button{min-height:60px;font-size:19px;justify-content:flex-start;text-align:left;border-radius:18px;padding:10px 16px}
+.choices button.ok,.mcol button.ok{background:var(--good-bg);border-color:var(--good);color:var(--good)}
+.choices button.no,.mcol button.no{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.match{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:16px}
+.mcol{display:flex;flex-direction:column;gap:10px}
+.mcol button{justify-content:flex-start;text-align:left;border-radius:16px;padding:10px 14px;font-weight:400;font-size:17px;line-height:var(--lh)}
+.mcol button.sel{outline:3px solid var(--lilas)}
+/* Carte mentale */
+.cm-wrap{display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,2fr);gap:16px}
+@media (max-width:760px){.cm-wrap,.match{grid-template-columns:1fr}}
+#cm-text{min-height:420px;font-size:18px}
+.cm-svg{border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:auto}
+.cm-svg svg{display:block;width:100%;height:auto}
+
 /* Impression : feuille à trous, puis les réponses sur une autre page */
 #sheet{display:none}
 @media print{
@@ -133,12 +154,16 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 <div class="wrap">
   <div class="row" style="justify-content:space-between">
     <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Apprendre</span></h1>
-    <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav>
+    <div class="row" style="gap:12px">
+    <div class="xp" id="xp" title="Ta progression"><img src="mascotte.png" alt="" width="40" height="29"><b id="xp-lvl">Niv. 1</b><span class="xpbar"><i id="xp-bar"></i></span><span class="muted" id="xp-n">0 XP</span><span class="plume" id="xp-pl">🪶 0</span></div>
+    <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav></div>
   </div>
 
   <div class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" aria-selected="true" data-tab="jour">Aujourd'hui</button>
     <button role="tab" aria-selected="false" data-tab="blanche">Feuille blanche</button>
+    <button role="tab" aria-selected="false" data-tab="jeux">Quiz et jeux</button>
+    <button role="tab" aria-selected="false" data-tab="carte">Carte mentale</button>
     <button role="tab" aria-selected="false" data-tab="planning">Mon planning</button>
     <button role="tab" aria-selected="false" data-tab="notions">Mes cours</button>
     <button role="tab" aria-selected="false" data-tab="imprimer">Imprimer</button>
@@ -167,7 +192,7 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
       <div class="qcard">
         <div class="src" id="q-src"></div>
         <p class="qtext" id="q-text"></p>
-        <button class="primary" id="voir" style="align-self:flex-start">Voir la réponse <kbd>Espace</kbd></button>
+        <div class="row"><button class="primary" id="voir">Voir la réponse <kbd>Espace</kbd></button><button id="lire" aria-label="Lire à voix haute">🔊 Écouter <kbd>L</kbd></button></div>
         <div id="noter" hidden style="display:flex;flex-direction:column;gap:10px">
           <p class="muted">Tu t'en souvenais ?</p>
           <div class="grades">
@@ -189,9 +214,11 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
       <h3>Réglages</h3>
       <div class="row"><label for="exam"><b>Date du partiel</b></label><input type="date" id="exam"><span class="muted">Pour toutes les matières sans date. Une date par matière se règle dans « Mon planning ».</span></div>
       <div class="tools">
-        <div class="group"><span class="muted">Durée par jour</span><span class="seg2" id="minutes"><button data-m="5">5 min</button><button data-m="10" class="on">10 min</button><button data-m="15">15 min</button></span></div>
+        <div class="group"><span class="muted">Durée par jour</span><span class="seg2" id="minutes"><button data-m="5">5 min</button><button data-m="10" class="on">10 min</button><button data-m="15">15 min</button><button data-m="0">Selon mon planning</button></span></div>
         <div class="group"><span class="muted">Taille</span><button id="moins" aria-label="Texte plus petit">A−</button><button id="plus" aria-label="Texte plus grand">A+</button></div>
         <div class="group"><span class="muted">Interligne</span><span class="seg2"><button id="lh-n" class="on">Normal</button><button id="lh-l">Large</button><button id="lh-xl">Très large</button></span></div>
+        <div class="group"><span class="muted">Espace entre les lettres</span><span class="seg2" id="esp"><button data-e="0" class="on">Normal</button><button data-e="1">Large</button><button data-e="2">Très large</button></span></div>
+        <div class="group"><span class="muted">Voix</span><span class="seg2" id="voix"><button data-v="0.8">Lente</button><button data-v="1" class="on">Normale</button></span></div>
       </div>
     </div>
   </section>
@@ -212,6 +239,38 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
       <p class="muted" id="fb-sub"></p>
       <div id="fb-list" style="display:flex;flex-direction:column;gap:10px"></div>
       <div class="row"><button class="primary" id="fb-miss">Recommencer avec ce qui manque</button><button id="fb-zero">Recommencer de zéro</button><button id="fb-rev">Mettre les oubliés en révision</button></div>
+    </div>
+  </section>
+
+  <!-- ===== Quiz et jeux ===== -->
+  <section id="tab-jeux" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card">
+      <h2>Quiz et jeux</h2>
+      <p class="muted">Pour s'entraîner autrement. Pas de chrono : on gagne de l'XP en travaillant, pas en allant vite.</p>
+      <div class="row"><label for="jx-mat"><b>Matière</b></label><select id="jx-mat" style="flex:1 1 200px"></select>
+        <span class="seg2" id="jx-mode"><button data-m="quiz" class="on">Quiz</button><button data-m="match">Associer</button></span>
+        <button class="primary" id="jx-go">Commencer</button></div>
+    </div>
+    <div class="card" id="qz" hidden>
+      <div class="row" style="justify-content:space-between"><span class="muted" id="qz-pos"></span><span class="muted" id="qz-score"></span></div>
+      <p class="qtext" id="qz-q"></p>
+      <div class="choices" id="qz-c"></div>
+      <div class="row"><button id="qz-lire">🔊 Écouter</button><button class="primary" id="qz-next" hidden>Suivante</button></div>
+    </div>
+    <div class="card" id="mt" hidden>
+      <p class="muted">Touche un mot à gauche, puis la phrase qui va avec à droite.</p>
+      <div class="match"><div id="mt-l" class="mcol"></div><div id="mt-r" class="mcol"></div></div>
+    </div>
+    <div class="card" id="jx-end" hidden><h2 id="jx-end-t"></h2><p id="jx-end-s"></p><div class="row"><button class="primary" id="jx-again">Rejouer</button></div></div>
+  </section>
+
+  <!-- ===== Carte mentale ===== -->
+  <section id="tab-carte" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card">
+      <h2>Ma carte mentale</h2>
+      <p class="muted">Écris tes idées avec tes mots, une par ligne. Mets 2 espaces (ou un tiret) devant une ligne pour l'accrocher à l'idée du dessus. La carte se dessine toute seule.</p>
+      <div class="row"><label for="cm-mat"><b>Matière</b></label><select id="cm-mat" style="flex:1 1 200px"></select><button id="cm-notions">Partir de mes notions</button><button id="cm-print">Imprimer</button></div>
+      <div class="cm-wrap"><textarea id="cm-text" spellcheck="false" placeholder="Droit de propriété&#10;  usus : utiliser&#10;  fructus : les fruits&#10;  abusus : vendre ou détruire"></textarea><div id="cm-svg" class="cm-svg"></div></div>
     </div>
   </section>
 
@@ -393,7 +452,7 @@ function newPerDay(m, now) {
 }
 function newQuota(now) { let q = 0; new Set(db.notions.map(matOf)).forEach(m => { q += newPerDay(m, now); }); return Math.min(30, Math.max(NEW_MAX, q)); }
 function todayQueue(now = Date.now()) {
-  const budget = Math.max(60, db.minutes * 60);
+  const budget = Math.max(60, (db.minutes || plannedToday()) * 60);
   const end = new Date(); end.setHours(23, 59, 59, 999);
   const live = db.notions.filter(n => !finished(n, now));
   // d'abord ce qui s'oublie le plus, dans les matières qui comptent le plus et dont l'examen approche
@@ -466,6 +525,7 @@ function grade(g) {
   if (!shown) return; const n = queue[idx];
   if (!n.last) db.newToday++;
   schedule(n, g, Date.now()); stats[g]++; save();
+  if (onceToday("n" + n.id)) gain(n.reps === 1 ? 3 : 2, "révision");
   if (g === 1 && queue.slice(idx + 1).filter(x => x === n).length === 0) queue.push(n);   // « Raté » : elle revient à la fin
   else done++;
   idx++;
@@ -474,6 +534,7 @@ function grade(g) {
 function endSession() {
   $("seance").hidden = true; $("bilan").hidden = false; $("reglages").hidden = false; $("prog").style.width = "100%";
   const tot = stats[1] + stats[2] + stats[3];
+  if (tot && idx >= queue.length && onceToday("jour")) gain(10, "révision du jour finie");
   $("bilan-t").textContent = tot ? `${stats[3]} facile${stats[3] > 1 ? "s" : ""}, ${stats[2]} avec effort, ${stats[1]} raté${stats[1] > 1 ? "s" : ""}. Les notions difficiles reviendront plus tôt.` : "Tu reprendras plus tard.";
   renderToday(); renderList();
 }
@@ -486,6 +547,7 @@ document.addEventListener("keydown", e => {
   if ($("seance").hidden || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
   if (e.key === " " || e.key === "Enter") { if (!shown) { e.preventDefault(); reveal(); } }
   else if (["1", "2", "3"].includes(e.key)) grade(Number(e.key));
+  else if (e.key === "l" || e.key === "L") $("lire").click();
 });
 
 /* ---------- Mes notions ---------- */
@@ -715,11 +777,13 @@ function fbCheck() {
     const r = document.createElement("div"); r.className = "res " + (pc >= 0.6 ? "ok" : "no"); r.append(holeHTML(n, true));
     const k = document.createElement("div"); kw.forEach(w => { const s = document.createElement("span"); s.className = "kw " + (ok.includes(w) ? "ok" : "no"); s.textContent = w; k.append(s); });
     box.append(r, k); if (pc < 0.6) fb.miss = [n];
+    if (onceToday("ex-" + n.id)) gain(3, "explication");
     $("fb-miss").textContent = "Une autre notion"; $("fb-zero").textContent = "Réessayer celle-ci";
   } else {
     const res = fb.targets.map(n => [n, holeWords(n).every(w => found(said, w))]);
     const got = res.filter(x => x[1]).length; fb.miss = res.filter(x => !x[1]).map(x => x[0]);
     $("fb-score").textContent = `${got} sur ${res.length} retrouvée${got > 1 ? "s" : ""}`;
+    if (onceToday("fb-" + $("fb-mat").value)) gain(5 + got, "feuille blanche");
     $("fb-sub").textContent = fb.miss.length ? "En rouge, ce qui manque. Relis-le, puis recommence : c'est en cherchant qu'on retient." : "Tout y est. Bravo !";
     res.sort((a, b) => a[1] - b[1]).forEach(([n, ok]) => { const r = document.createElement("div"); r.className = "res " + (ok ? "ok" : "no"); r.append(ok ? "✓ " : "✗ ", holeHTML(n, true)); box.append(r); });
     $("fb-miss").textContent = "Recommencer avec ce qui manque"; $("fb-zero").textContent = "Recommencer de zéro";
@@ -857,6 +921,176 @@ document.querySelectorAll("#hz-def button").forEach(b => b.addEventListener("cli
 setHz(db.hz || "moyen");
 document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => { tab(b.dataset.go); if (b.dataset.go === "notions") $("imp-card").scrollIntoView({block: "start"}); }));
 
+/* ---------- Jauge d'XP et plumes ----------
+   On gagne de l'XP en travaillant vraiment : réviser une notion (une fois par jour et par notion),
+   une feuille blanche, un quiz ou un jeu fini, la révision du jour terminée, revenir après une pause.
+   Jamais pour la vitesse. Chaque niveau donne 10 plumes (pour la mascotte) et 5 crédits bonus (20 au plus par semaine). */
+db.xp = db.xp || 0; db.plumes = db.plumes || 0; db.xpDay = db.xpDay || {}; db.bonus = db.bonus || {week: "", n: 0};
+const lvlOf = x => Math.floor(Math.sqrt(x / 40)) + 1;
+const lvlStart = l => 40 * (l - 1) * (l - 1);
+const weekId = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.toISOString().slice(0, 10); };
+function renderXP() {
+  const l = lvlOf(db.xp), a = lvlStart(l), b = lvlStart(l + 1);
+  $("xp-lvl").textContent = "Niv. " + l; $("xp-n").textContent = db.xp + " XP"; $("xp-pl").textContent = "🪶 " + db.plumes;
+  $("xp-bar").style.width = Math.round((db.xp - a) / (b - a) * 100) + "%";
+  $("xp").title = `Encore ${b - db.xp} XP avant le niveau ${l + 1}`;
+}
+function gain(n, why) {
+  if (!n) return; const before = lvlOf(db.xp); db.xp += n;
+  const after = lvlOf(db.xp);
+  if (after > before) {
+    db.plumes += 10 * (after - before);
+    if (db.bonus.week !== weekId()) db.bonus = {week: weekId(), n: 0};
+    const add = Math.min(5 * (after - before), 20 - db.bonus.n); db.bonus.n += add;
+    note(`Niveau ${after} ! +10 plumes` + (add ? ` et +${add} crédits bonus cette semaine.` : "."), "ok");
+  }
+  save(); renderXP();
+}
+const onceToday = key => { const t = today(); if (db.xpDay[key] === t) return false; db.xpDay[key] = t; return true; };
+{ const last = db.lastSeen || 0, days = last ? (Date.now() - last) / DAY : 0; db.lastSeen = Date.now();
+  for (const k in db.xpDay) if (db.xpDay[k] !== today()) delete db.xpDay[k];   // on ne garde que les clés du jour
+  save(); if (days >= 2) { gain(10, "retour"); note("Content de te revoir ! +10 XP pour la reprise.", "ok"); } }
+
+/* ---------- Lecture à voix haute ---------- */
+let rate = 1; try { rate = Number(localStorage.getItem("alto-voix")) || 1; } catch (e) {}
+function speak(text) {
+  if (!("speechSynthesis" in window)) { note("La lecture à voix haute n'existe pas sur ce navigateur.", "warn"); return; }
+  speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "fr-FR"; u.rate = rate; speechSynthesis.speak(u);
+}
+const sayNotion = (n, show) => { const t = tokens(n.text), h = new Set(n.holes); return t.map((w, i) => h.has(i) && !show ? " blanc " : w).join(""); };
+$("lire").addEventListener("click", () => { const n = queue[idx]; if (n) speak(sayNotion(n, shown)); });
+document.querySelectorAll("#voix button").forEach(b => { b.classList.toggle("on", Number(b.dataset.v) === rate);
+  b.addEventListener("click", () => { rate = Number(b.dataset.v); try { localStorage.setItem("alto-voix", rate); } catch (e) {} document.querySelectorAll("#voix button").forEach(x => x.classList.toggle("on", x === b)); speak("Voici la voix de lecture."); }); });
+
+/* ---------- Espace entre les lettres (prouvé utile pour les dys) ---------- */
+const ESP = [["0", "0"], [".06em", ".2em"], [".12em", ".4em"]];
+function setEsp(i) { document.documentElement.style.setProperty("--ls", ESP[i][0]); document.documentElement.style.setProperty("--ws", ESP[i][1]);
+  document.querySelectorAll("#esp button").forEach(b => b.classList.toggle("on", Number(b.dataset.e) === i)); try { localStorage.setItem("alto-esp", i); } catch (e) {} }
+document.querySelectorAll("#esp button").forEach(b => b.addEventListener("click", () => setEsp(Number(b.dataset.e))));
+try { setEsp(Number(localStorage.getItem("alto-esp")) || 0); } catch (e) { setEsp(0); }
+
+/* ---------- Quiz ----------
+   La bonne réponse = les mots cachés de la notion. Les 3 mauvaises = les mots cachés d'autres notions,
+   de la même matière d'abord, et de longueur proche (pour que ce ne soit pas trop facile).
+   Une notion à revoir ou nouvelle est notée dans l'algorithme : juste = « avec effort » (reconnaître est plus facile que retrouver), faux = « raté ». */
+const answerOf = n => holeWords(n).join(" ");
+function fillMats(sel) { const cur = sel.value; sel.replaceChildren(); const all = document.createElement("option"); all.value = ""; all.textContent = "Toutes les matières"; sel.append(all);
+  matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = o.textContent = m; sel.append(o); }); if ([...sel.options].some(o => o.value === cur)) sel.value = cur; }
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function distractors(n, k = 3) {
+  const ans = norm(answerOf(n)), L = ans.length, seen = new Set([ans]);
+  return db.notions.filter(x => x !== n && answerOf(x)).map(x => ({a: answerOf(x), same: matOf(x) === matOf(n)}))
+    .filter(x => { const k2 = norm(x.a); if (seen.has(k2)) return false; seen.add(k2); return true; })
+    .sort((x, y) => (y.same - x.same) || Math.abs(x.a.length - L) - Math.abs(y.a.length - L) || Math.random() - .5)
+    .slice(0, k).map(x => x.a);
+}
+let qz = {list: [], i: 0, ok: 0, done: false};
+function pool() { const m = $("jx-mat").value; return db.notions.filter(n => n.holes.length && answerOf(n) && (!m || matOf(n) === m)); }
+function quizStart() {
+  const now = Date.now(), p = pool().sort((a, b) => ((a.last ? a.due : 0) <= now ? 0 : 1) - ((b.last ? b.due : 0) <= now ? 0 : 1) || Math.random() - .5);
+  if (db.notions.filter(n => answerOf(n)).length < 4) { note("Il faut au moins 4 notions pour un quiz.", "warn"); return; }
+  qz = {list: p.slice(0, 10), i: 0, ok: 0}; $("jx-end").hidden = true; $("mt").hidden = true; $("qz").hidden = false; quizShow();
+}
+function quizShow() {
+  const n = qz.list[qz.i]; $("qz-pos").textContent = `Question ${qz.i + 1} sur ${qz.list.length}`; $("qz-score").textContent = `${qz.ok} juste${qz.ok > 1 ? "s" : ""}`;
+  $("qz-q").replaceChildren(holeHTML(n, false)); $("qz-next").hidden = true;
+  const box = $("qz-c"); box.replaceChildren();
+  shuffle([answerOf(n), ...distractors(n)]).forEach(a => { const b = document.createElement("button"); b.textContent = a; b.addEventListener("click", () => quizAnswer(b, a === answerOf(n))); box.append(b); });
+}
+function quizAnswer(btn, good) {
+  if (!$("qz-next").hidden) return; const n = qz.list[qz.i], now = Date.now();
+  [...$("qz-c").children].forEach(b => { if (b.textContent === answerOf(n)) b.classList.add("ok"); });
+  if (!good) btn.classList.add("no"); else qz.ok++;
+  $("qz-q").replaceChildren(holeHTML(n, true));
+  if (!n.last || n.due <= now) { if (!n.last) db.newToday++; schedule(n, good ? 2 : 1, now); save(); }
+  if (onceToday("n" + n.id)) gain(1, "quiz");
+  $("qz-next").hidden = false; $("qz-next").textContent = qz.i + 1 < qz.list.length ? "Suivante" : "Voir le score"; $("qz-next").focus();
+}
+$("qz-next").addEventListener("click", () => { qz.i++; if (qz.i < qz.list.length) quizShow(); else jeuFin(`${qz.ok} sur ${qz.list.length}`, qz.ok === qz.list.length ? "Parfait !" : "Les notions ratées reviendront plus tôt dans ta révision."); });
+$("qz-lire").addEventListener("click", () => { const n = qz.list[qz.i]; if (n) speak(sayNotion(n, !$("qz-next").hidden)); });
+
+/* ---------- Jeu « Associer » : 5 mots à relier à leur phrase. Pas de chrono. ---------- */
+let mt = {sel: null, left: 0};
+function matchStart() {
+  const p = shuffle(pool()).filter((n, i, a) => a.findIndex(x => norm(answerOf(x)) === norm(answerOf(n))) === i).slice(0, 5);
+  if (p.length < 3) { note("Il faut au moins 3 notions dans cette matière pour jouer.", "warn"); return; }
+  $("jx-end").hidden = true; $("qz").hidden = true; $("mt").hidden = false; mt = {sel: null, left: p.length};
+  const L = $("mt-l"), R = $("mt-r"); L.replaceChildren(); R.replaceChildren();
+  shuffle([...p]).forEach(n => { const b = document.createElement("button"); b.textContent = answerOf(n); b.dataset.id = n.id;
+    b.addEventListener("click", () => { if (b.disabled) return; L.querySelectorAll("button").forEach(x => x.classList.remove("sel")); b.classList.add("sel"); mt.sel = b; }); L.append(b); });
+  shuffle([...p]).forEach(n => { const b = document.createElement("button"); b.append(holeHTML(n, false)); b.dataset.id = n.id;
+    b.addEventListener("click", () => {
+      if (b.disabled || !mt.sel) { if (!mt.sel) note("Touche d'abord un mot à gauche.", "warn"); return; }
+      if (mt.sel.dataset.id === b.dataset.id) { b.replaceChildren(holeHTML(n, true)); [b, mt.sel].forEach(x => { x.classList.remove("sel"); x.classList.add("ok"); x.disabled = true; }); mt.sel = null; mt.left--;
+        if (!mt.left) setTimeout(() => jeuFin("Tout est relié !", "Bravo. Tu peux rejouer avec d'autres notions."), 500); }
+      else { b.classList.add("no"); setTimeout(() => b.classList.remove("no"), 700); }
+    }); R.append(b); });
+}
+function jeuFin(t, sub) {
+  $("qz").hidden = true; $("mt").hidden = true; $("jx-end").hidden = false; $("jx-end-t").textContent = t; $("jx-end-s").textContent = sub;
+  if (onceToday("jeu-" + jx)) gain(5, "jeu"); renderToday();
+}
+let jx = "quiz";
+document.querySelectorAll("#jx-mode button").forEach(b => b.addEventListener("click", () => { jx = b.dataset.m; document.querySelectorAll("#jx-mode button").forEach(x => x.classList.toggle("on", x === b)); }));
+$("jx-go").addEventListener("click", () => jx === "quiz" ? quizStart() : matchStart());
+$("jx-again").addEventListener("click", () => jx === "quiz" ? quizStart() : matchStart());
+
+/* ---------- Carte mentale faite par l'élève ----------
+   L'élève écrit ses idées en liste (2 espaces ou un tiret = un niveau de plus).
+   L'algorithme place la matière au centre, les idées principales en cercle, et leurs détails autour d'elles. */
+db.maps = db.maps || {};
+function parseOutline(text) {
+  const root = {t: "", kids: []}, stack = [{lvl: -1, node: root}];
+  text.split("\n").forEach(line => { if (!line.trim()) return;
+    const m = line.match(/^(\s*)([-•*]\s*)?(.*)$/), lvl = Math.floor(m[1].replace(/\t/g, "  ").length / 2) + (m[2] && !m[1] ? 1 : 0);
+    const node = {t: m[3].trim(), kids: []};
+    while (stack.length > 1 && stack[stack.length - 1].lvl >= lvl) stack.pop();
+    stack[stack.length - 1].node.kids.push(node); stack.push({lvl, node});
+  });
+  return root;
+}
+const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function wrapLines(t, max) { const out = []; let cur = ""; t.split(/\s+/).forEach(w => { if ((cur + " " + w).trim().length > max && cur) { out.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }); if (cur) out.push(cur); return out.slice(0, 3); }
+let BOX = [];
+function bubble(x, y, t, kind, col) {
+  const lines = wrapLines(t, kind === 0 ? 16 : kind === 1 ? 16 : 18), fs = kind === 0 ? 30 : kind === 1 ? 25 : 21, lh = fs * 1.25;
+  const w = Math.max(...lines.map(l => l.length)) * fs * 0.56 + 28, h = lines.length * lh + 18;
+  BOX.push([x - w / 2, y - h / 2, x + w / 2, y + h / 2]);
+  const fill = kind === 0 ? "#3B2557" : kind === 1 ? col : "#FFFFFF", fg = kind === 0 ? "#FFFFFF" : kind === 1 ? "#1E1A10" : "#251B33";
+  return `<rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" rx="${kind === 2 ? 12 : 18}" fill="${fill}" stroke="${kind === 2 ? col : "none"}" stroke-width="2"/>` +
+    `<text x="${x}" y="${y - (lines.length - 1) * lh / 2 + fs * 0.35}" text-anchor="middle" font-family="Arial" font-size="${fs}" font-weight="${kind < 2 ? 700 : 400}" fill="${fg}">` +
+    lines.map((l, i) => `<tspan x="${x}" dy="${i ? lh : 0}">${esc(l)}</tspan>`).join("") + `</text>`;
+}
+const CMC = ["#C9B6FF", "#FFD84D", "#A6E3BC", "#FFB08A", "#B8D4FF", "#F6B6D0"];
+function drawMap() {
+  const m = $("cm-mat").value, tree = parseOutline($("cm-text").value);
+  let top = tree.kids; if (top.length === 1 && top[0].kids.length) { tree.t = top[0].t; top = top[0].kids; }
+  const W = 1000, H = 760, cx = W / 2, cy = H / 2, k = Math.max(top.length, 1), R1 = 210, R2 = 340;
+  let lines = "", nodes = ""; BOX = [];
+  top.forEach((c, i) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / k, x = cx + Math.cos(a) * R1 * 1.25, y = cy + Math.sin(a) * R1, col = CMC[i % CMC.length];
+    lines += `<path d="M${cx} ${cy} Q ${(cx + x) / 2} ${(cy + y) / 2 - 20} ${x} ${y}" stroke="${col}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+    const n = c.kids.length, spread = Math.min(Math.PI / k * 1.6, 1.4);
+    c.kids.forEach((g, j) => { const b = a + (n > 1 ? (j / (n - 1) - .5) * spread : 0), gx = cx + Math.cos(b) * R2 * 1.32, gy = cy + Math.sin(b) * R2;
+      lines += `<path d="M${x} ${y} L ${gx} ${gy}" stroke="${col}" stroke-width="3" fill="none"/>`; nodes += bubble(gx, gy, g.t, 2, col); });
+    nodes += bubble(x, y, c.t, 1, col);
+  });
+  nodes += bubble(cx, cy, tree.t || m || "Ma carte", 0);
+  const x0 = Math.min(...BOX.map(b => b[0])) - 16, y0 = Math.min(...BOX.map(b => b[1])) - 16, x1 = Math.max(...BOX.map(b => b[2])) + 16, y1 = Math.max(...BOX.map(b => b[3])) + 16;
+  $("cm-svg").innerHTML = `<svg viewBox="${x0} ${y0} ${x1 - x0} ${y1 - y0}" role="img" aria-label="Carte mentale">${lines}${nodes}</svg>`;
+  db.maps[m || "_"] = $("cm-text").value; save();
+}
+let cmT; $("cm-text").addEventListener("input", () => { clearTimeout(cmT); cmT = setTimeout(() => { drawMap(); if ($("cm-text").value.split("\n").filter(x => x.trim()).length >= 5 && onceToday("carte-" + $("cm-mat").value)) gain(5, "carte"); }, 300); });
+$("cm-mat").addEventListener("change", () => { $("cm-text").value = db.maps[$("cm-mat").value || "_"] || ""; drawMap(); });
+$("cm-notions").addEventListener("click", () => {
+  const m = $("cm-mat").value, ns = db.notions.filter(n => !m || matOf(n) === m);
+  if (!ns.length) { note("Pas encore de notion dans cette matière.", "warn"); return; }
+  const prev = $("cm-text").value.trim();
+  $("cm-text").value = (prev ? prev + "\n" : (m || "Mes cours") + "\n") + ns.slice(0, 8).map(n => "  " + answerOf(n) + (keyWords(n).length ? "\n    " + keyWords(n).slice(0, 3).join(", ") : "")).join("\n");
+  drawMap(); note("Voilà une base. Réécris chaque idée avec tes mots : c'est ça qui fait retenir.", "ok");
+});
+$("cm-print").addEventListener("click", () => { const sh = $("sheet"); sh.innerHTML = `<h2>Alto · Carte mentale · ${esc($("cm-mat").value || "")}</h2>` + $("cm-svg").innerHTML; window.print(); });
+
 /* ---------- Imprimer ---------- */
 document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click", () => {
   const list = b.dataset.print === "jour" ? todayQueue() : db.notions;
@@ -873,19 +1107,22 @@ document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click
 /* ---------- Onglets, réglages ---------- */
 function tab(name) {
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  ["jour", "blanche", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
+  ["jour", "blanche", "jeux", "carte", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
   if (name === "notions") { renderList(); const dl = $("mat-list"); dl.replaceChildren(); matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = m; dl.append(o); }); }
   if (name === "jour") renderToday();
   if (name === "blanche") { fbFill(); fbStart(); }
+  if (name === "jeux") fillMats($("jx-mat"));
+  if (name === "carte") { fillMats($("cm-mat")); $("cm-mat").options[0].textContent = "Choisis une matière"; $("cm-text").value = db.maps[$("cm-mat").value || "_"] || ""; drawMap(); }
   if (name === "planning") { renderMats(); renderActs(); renderPlan(); }
 }
 document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => tab(b.dataset.tab)));
 function note(t, k) { const n = $("note"); if (!t) { n.hidden = true; return; } n.className = "msg " + (k || "ok"); n.textContent = t; n.hidden = false; clearTimeout(note.t); note.t = setTimeout(() => n.hidden = true, 5000); }
 $("exam").value = db.exam || "";
 $("exam").addEventListener("change", () => { db.exam = $("exam").value; save(); renderToday(); });
+function plannedToday() { try { const d = plan()[0]; return Math.max(10, d.items.filter(x => x.type === "rev").reduce((s, x) => s + x.t - x.f, 0)); } catch (e) { return 10; } }
 const setMin = m => { db.minutes = m; save(); document.querySelectorAll("#minutes button").forEach(b => b.classList.toggle("on", Number(b.dataset.m) === m)); renderToday(); };
 document.querySelectorAll("#minutes button").forEach(b => b.addEventListener("click", () => setMin(Number(b.dataset.m))));
-setMin(db.minutes || 10);
+setMin(db.minutes === 0 ? 0 : (db.minutes || 10));
 let size = 24; try { size = Number(localStorage.getItem("alto-taille")) || 24; } catch (e) {}
 const setSize = v => { size = Math.min(40, Math.max(16, v)); document.documentElement.style.setProperty("--size", size + "px"); try { localStorage.setItem("alto-taille", size); } catch (e) {} };
 $("moins").addEventListener("click", () => setSize(size - 2)); $("plus").addEventListener("click", () => setSize(size + 2)); setSize(size);
@@ -898,7 +1135,7 @@ try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { se
 /* À chaque ouverture : les nouveaux passages marqués dans Écoute arrivent tout seuls */
 { const added = importEcoute(); if (added > 0) note(`${added} passage${added > 1 ? "s" : ""} marqué${added > 1 ? "s" : ""} dans Écoute ${added > 1 ? "sont" : "est"} arrivé${added > 1 ? "s" : ""} dans ta révision.`, "ok"); }
 $("vide-imp").addEventListener("click", () => { tab("notions"); $("imp-card").scrollIntoView({block: "start"}); });
-renderToday(); renderList();
+renderToday(); renderList(); renderXP();
 })();
 </script>
 </body>
