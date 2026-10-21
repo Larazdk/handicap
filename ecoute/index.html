@@ -144,9 +144,24 @@ details.card{display:block}
 details.card > *:not(summary){margin-top:14px}
 details summary{cursor:pointer}
 a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;padding:8px 14px;min-height:46px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
+
+/* ===== Direction artistique de la maquette 11 ===== */
+:root{--frame:linear-gradient(135deg,#E7DEF8 0%,#F3ECF6 50%,#F7EFE4 100%);--grad:linear-gradient(135deg,#3B2557 0%,#5B3E8C 55%,#7C5CD6 100%);--hero:#C9B6FF}
+@media (prefers-color-scheme: dark){:root{--frame:#0E0A14;--hero:#3A2A5C}}
+html,body{background:var(--frame)}
+body{padding:24px}
+.frame{max-width:1180px;margin:0 auto;background:var(--bg);border-radius:32px;box-shadow:0 30px 70px rgba(59,37,87,.14);padding:28px 36px 36px}
+.top .nav{background:var(--side)}
+h1.brand{font-size:30px}
+.card{border-radius:26px}
+button.primary{background:var(--grad);border:0;color:#FFFFFF;box-shadow:0 10px 22px rgba(91,62,140,.26)}
+button.primary:hover{filter:brightness(1.08)}
+@media (max-width:760px){body{padding:0}.frame{border-radius:0;padding:16px 14px 28px;box-shadow:none}}
+@media print{html,body{background:#fff}.frame{box-shadow:none;padding:0}}
 </style>
 </head>
 <body>
+<div class="frame">
 <div class="top">
   <div class="row" style="justify-content:space-between">
     <h1 class="brand"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Écoute</span></h1>
@@ -357,6 +372,7 @@ a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:12px;
       <p class="muted">La clé reste sur cet appareil. Pour un test seulement.</p>
     </details>
   </section>
+</div>
 </div>
 
 <script>

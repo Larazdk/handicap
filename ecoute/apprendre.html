@@ -148,26 +148,70 @@ body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
   #sheet .answers{break-before:page}
   #sheet .answers li{line-height:1.8}
 }
+
+/* ===== Direction artistique de la maquette 11 : cadre, menu à gauche, titres avec surligneur ===== */
+:root{--frame:linear-gradient(135deg,#E7DEF8 0%,#F3ECF6 50%,#F7EFE4 100%);--grad:linear-gradient(135deg,#3B2557 0%,#5B3E8C 55%,#7C5CD6 100%);--hero:#C9B6FF;--sw:#F9E4A0}
+@media (prefers-color-scheme: dark){:root{--frame:#0E0A14;--hero:#3A2A5C;--sw:#6B5414}}
+html,body{background:var(--frame)}
+body{padding:24px}
+.wrap{max-width:1380px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;background:var(--bg);border-radius:32px;overflow:hidden;box-shadow:0 30px 70px rgba(59,37,87,.14);min-height:calc(100vh - 48px)}
+.side{background:var(--side);padding:26px 0 22px 16px;display:flex;flex-direction:column;gap:22px}
+.side h1{font-size:26px;padding-left:6px}
+.side .nav{margin-right:16px;align-self:flex-start}.side .nav a{padding:8px 16px}
+.wrap>*{min-width:0}
+.side .tabs{flex-direction:column;flex-wrap:nowrap;background:none;border:0;padding:0;gap:4px;border-radius:0}
+.side .tabs button{justify-content:flex-start;gap:12px;padding:8px 14px;border-radius:22px 0 0 22px;font-weight:600;color:var(--muted);min-height:54px;font-size:17px}
+.side .tabs button[aria-selected=true]{background:var(--bg);color:var(--ink)}
+.side .tabs .ic{width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.side .tabs button[aria-selected=true] .ic{background:var(--hero);color:var(--ink-d)}
+.side .xp{margin:auto 16px 0 0;flex-wrap:wrap;height:auto;padding:12px;border-radius:22px;border:0;gap:8px 10px}
+.side .xpbar{flex:1 1 80px}
+.main{padding:30px 44px 44px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.top{display:flex;flex-direction:column;gap:2px}
+.pt{font-size:46px;line-height:1.1}
+.sw{position:relative;display:inline-block;z-index:0;white-space:nowrap}
+.sw::after{content:"";position:absolute;left:-6px;right:-6px;bottom:4px;height:45%;background:var(--sw);border-radius:40% 60% 50% 40%/60% 40% 60% 40%;transform:rotate(-1.5deg);z-index:-1}
+.card{border-radius:26px;padding:22px 24px}
+.hero{background:var(--hero);border-radius:34px;padding:30px 32px}
+.hero .big{font-size:46px}
+button.primary,a.btn.primary{background:var(--grad);border:0;color:#FFFFFF;box-shadow:0 10px 22px rgba(91,62,140,.26);padding:8px 24px}
+button.primary:hover{filter:brightness(1.08)}
+.tile{border-radius:26px}
+@media (max-width:900px){
+  body{padding:0}
+  .wrap{grid-template-columns:1fr;border-radius:0;min-height:100vh}
+  .side{padding:16px;gap:12px}
+  .side .tabs{flex-direction:row;overflow-x:auto;gap:6px}
+  .side .tabs button{border-radius:999px;min-height:46px;white-space:nowrap;padding:6px 14px 6px 6px}
+  .side .tabs .ic{width:32px;height:32px}
+  .side .xp{margin:0}
+  .main{padding:20px 16px 32px}
+  .pt{font-size:34px}
+  .hero .big{font-size:32px}
+  .side .xp{align-self:flex-start}
+  .side .xpbar{flex:0 0 70px}
+}
+@media print{.wrap{display:block;box-shadow:none;border-radius:0}html,body{background:#fff}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="row" style="justify-content:space-between">
-    <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Apprendre</span></h1>
-    <div class="row" style="gap:12px">
+  <aside class="side">
+    <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto </h1>
+    <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav>
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" aria-selected="true" data-tab="jour"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>Aujourd'hui</button>
+      <button role="tab" aria-selected="false" data-tab="blanche"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></span>Feuille blanche</button>
+      <button role="tab" aria-selected="false" data-tab="jeux"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="4"/><path d="M8 11v4M6 13h4M15.5 12h.01M17.5 14h.01"/></svg></span>Quiz et jeux</button>
+      <button role="tab" aria-selected="false" data-tab="carte"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="4.5" cy="6" r="2"/><circle cx="19.5" cy="6" r="2"/><circle cx="12" cy="20.5" r="2"/><path d="M6.2 7.2l3.4 3M17.8 7.2l-3.4 3M12 15v3.5"/></svg></span>Carte mentale</button>
+      <button role="tab" aria-selected="false" data-tab="planning"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>Mon planning</button>
+      <button role="tab" aria-selected="false" data-tab="notions"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5c3-1.5 6-1.5 8 .5 2-2 5-2 8-.5v14c-3-1.5-6-1.5-8 .5-2-2-5-2-8-.5z"/><path d="M12 5.5v14"/></svg></span>Mes cours</button>
+      <button role="tab" aria-selected="false" data-tab="imprimer"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3.5" y="9" width="17" height="8" rx="2.5"/><path d="M7 14h10v7H7z"/></svg></span>Imprimer</button>
+    </div>
     <div class="xp" id="xp" title="Ta progression"><img src="mascotte.png" alt="" width="40" height="29"><b id="xp-lvl">Niv. 1</b><span class="xpbar"><i id="xp-bar"></i></span><span class="muted" id="xp-n">0 XP</span><span class="plume" id="xp-pl">🪶 0</span></div>
-    <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav></div>
-  </div>
-
-  <div class="tabs" role="tablist" aria-label="Sections">
-    <button role="tab" aria-selected="true" data-tab="jour">Aujourd'hui</button>
-    <button role="tab" aria-selected="false" data-tab="blanche">Feuille blanche</button>
-    <button role="tab" aria-selected="false" data-tab="jeux">Quiz et jeux</button>
-    <button role="tab" aria-selected="false" data-tab="carte">Carte mentale</button>
-    <button role="tab" aria-selected="false" data-tab="planning">Mon planning</button>
-    <button role="tab" aria-selected="false" data-tab="notions">Mes cours</button>
-    <button role="tab" aria-selected="false" data-tab="imprimer">Imprimer</button>
-  </div>
+  </aside>
+  <main class="main">
+  <header class="top"><span class="muted" id="top-date"></span><h1 class="pt" id="page-t"><span class="sw">Aujourd'hui</span></h1></header>
   <div id="note" class="msg" hidden></div>
 
   <!-- ===== Révision du jour ===== -->
@@ -361,6 +405,7 @@ body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
     <p class="muted">Astuce : dans la fenêtre d'impression, choisis « Enregistrer en PDF » pour garder la feuille sur ton téléphone.</p>
   </section>
 
+  </main>
   <div id="sheet"></div>
 </div>
 
@@ -1153,6 +1198,8 @@ document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click
 /* ---------- Onglets, réglages ---------- */
 function tab(name) {
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  { const t = document.querySelector(`[data-tab="${name}"]`).textContent.trim(), i = t.lastIndexOf(" "), h = $("page-t"); h.replaceChildren();
+    const sw = document.createElement("span"); sw.className = "sw"; sw.textContent = i > 0 ? t.slice(i + 1) : t; h.append(i > 0 ? t.slice(0, i + 1) : "", sw); window.scrollTo(0, 0); }
   ["jour", "blanche", "jeux", "carte", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
   if (name === "notions") { renderList(); const dl = $("mat-list"); dl.replaceChildren(); matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = m; dl.append(o); }); }
   if (name === "jour") renderToday();
@@ -1182,6 +1229,7 @@ try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { se
 { const added = importEcoute(); if (added > 0) note(`${added} passage${added > 1 ? "s" : ""} marqué${added > 1 ? "s" : ""} dans Écoute ${added > 1 ? "sont" : "est"} arrivé${added > 1 ? "s" : ""} dans ta révision.`, "ok"); }
 $("vide-imp").addEventListener("click", () => { tab("notions"); $("imp-card").scrollIntoView({block: "start"}); });
 renderToday(); renderList(); renderXP();
+$("top-date").textContent = new Date().toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"});
 })();
 </script>
 </body>
