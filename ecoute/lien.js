@@ -1,4 +1,4 @@
-/* Alto · Écoute — relier le téléphone à l'ordinateur.
+/* Notéa · Écoute — relier le téléphone à l'ordinateur.
    Le téléphone (près du prof) écoute et écrit. Chaque phrase part en direct vers l'ordinateur.
    Seul le texte voyage, de pair à pair (WebRTC via PeerJS). Le son n'est jamais envoyé.
    Ordinateur : « Relier mon téléphone » → code QR. Téléphone : ouvre le lien du code (…#lien=ID). */

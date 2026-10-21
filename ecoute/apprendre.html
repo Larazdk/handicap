@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Apprendre · Alto</title>
+<title>Apprendre · Notéa</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#3B2557">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&display=swap">
 <style>
-/* Alto · Apprendre : les cartes de mémoire et la révision du jour.
+/* Notéa · Apprendre : les cartes de mémoire et la révision du jour.
    Les notions viennent des passages marqués dans Écoute. Tout reste sur cet appareil. */
 :root{
   --ink:#3B2557; --ink-d:#2A1A40; --lilas:#7C5CD6; --hl:#FFD84D;
@@ -222,8 +222,8 @@ button.primary:hover{filter:brightness(1.08)}
 <body>
 <div class="wrap">
   <aside class="side">
-    <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto </h1>
-    <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav>
+    <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g></svg>Notéa </h1>
+    <nav class="nav" aria-label="Pages de Notéa"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav>
     <div class="tabs" role="tablist" aria-label="Sections">
       <button role="tab" aria-selected="true" data-tab="jour">Aujourd'hui</button>
       <details class="dep"><summary>Apprendre</summary>
@@ -1231,7 +1231,7 @@ $("cm-notions").addEventListener("click", () => {
   $("cm-text").value = (prev ? prev + "\n" : (m || "Mes cours") + "\n") + ns.slice(0, 8).map(n => "  " + answerOf(n) + (db.niv === 1 && keyWords(n).length ? "\n    " + keyWords(n).slice(0, 3).join(", ") : "")).join("\n");
   drawMap(); note("Voilà une base. Réécris chaque idée avec tes mots : c'est ça qui fait retenir.", "ok");
 });
-$("cm-print").addEventListener("click", () => { const sh = $("sheet"); sh.innerHTML = `<h2>Alto · Carte mentale · ${esc($("cm-mat").value || "")}</h2>` + $("cm-svg").innerHTML; window.print(); });
+$("cm-print").addEventListener("click", () => { const sh = $("sheet"); sh.innerHTML = `<h2>Notéa · Carte mentale · ${esc($("cm-mat").value || "")}</h2>` + $("cm-svg").innerHTML; window.print(); });
 
 /* ---------- Niveau de difficulté (Facile, Moyen, Difficile) ----------
    Feuille blanche : Facile = des indices (premières lettres) ; Difficile = expliquer en peu de mots.
@@ -1425,7 +1425,7 @@ document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click
   const list = b.dataset.print === "jour" ? todayQueue() : db.notions;
   if (!list.length) { note("Il n'y a rien à imprimer pour l'instant.", "warn"); return; }
   const sh = $("sheet"); sh.replaceChildren();
-  const h = document.createElement("h2"); h.textContent = "Alto · Texte à trous · " + new Date().toLocaleDateString("fr-FR");
+  const h = document.createElement("h2"); h.textContent = "Notéa · Texte à trous · " + new Date().toLocaleDateString("fr-FR");
   const ol = document.createElement("ol"); list.forEach(n => { const li = document.createElement("li"); li.append(holeHTML(n, false)); ol.append(li); });
   const ans = document.createElement("div"); ans.className = "answers";
   const h2 = document.createElement("h2"); h2.textContent = "Les réponses";

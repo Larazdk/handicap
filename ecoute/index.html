@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Écoute · Alto</title>
+<title>Écoute · Notéa</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#3B2557">
@@ -12,7 +12,7 @@
 <style>
 /* Une colonne : le cours (texte + questions). Les notes restent dans le logiciel de l élève (Word, OneNote) ; le cours se place dans une fenêtre à côté. */
 :root{
-  /* Alto : prune, lilas, crème. Titres Fraunces, texte Arial. */
+  /* Notéa : prune, lilas, crème. Titres Fraunces, texte Arial. */
   --ink:#3B2557; --ink-d:#2A1A40; --lilas:#7C5CD6; --hl:#FFD84D;
   --bg:#FCFAF6; --side:#F4F0FD; --card:#FFFFFF; --fg:#251B33; --muted:#4A4258; --line:#C9BFB0; --tint:#E4DBFF;
   --good:#0F4426; --good-bg:#D3F0DE; --bad:#7A2C00; --bad-bg:#FFE0CC; --warn:#5C4300; --warn-bg:#FFF0B0;
@@ -164,8 +164,8 @@ button.primary:hover{filter:brightness(1.08)}
 <div class="frame">
 <div class="top">
   <div class="row" style="justify-content:space-between">
-    <h1 class="brand"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto <span class="sep">· Écoute</span></h1>
-    <nav class="nav" aria-label="Pages d'Alto"><a href="./" aria-current="page">Écoute</a><a href="apprendre.html">Apprendre</a></nav>
+    <h1 class="brand"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g></svg>Notéa <span class="sep">· Écoute</span></h1>
+    <nav class="nav" aria-label="Pages de Notéa"><a href="./" aria-current="page">Écoute</a><a href="apprendre.html">Apprendre</a></nav>
   </div>
   <div class="row" style="justify-content:flex-end">
     <div class="row">
@@ -230,7 +230,7 @@ button.primary:hover{filter:brightness(1.08)}
       <input type="password" id="gkey" placeholder="Colle ta clé ici" autocomplete="off">
       <button id="gkeysave">Enregistrer</button>
     </div>
-    <p class="muted" id="gkey-help" hidden>Crée un compte gratuit sur <a href="https://app.gladia.io" target="_blank" rel="noopener">app.gladia.io</a> (50 € offerts, environ 73 h de cours), puis copie ta clé (« API key »). Elle reste sur cet appareil. Avec Gladia, le son part chez Gladia pour être écrit, puis il n'est pas gardé par Alto. Si le téléphone est relié, il reçoit la clé tout seul.</p>
+    <p class="muted" id="gkey-help" hidden>Crée un compte gratuit sur <a href="https://app.gladia.io" target="_blank" rel="noopener">app.gladia.io</a> (50 € offerts, environ 73 h de cours), puis copie ta clé (« API key »). Elle reste sur cet appareil. Avec Gladia, le son part chez Gladia pour être écrit, puis il n'est pas gardé par Notéa. Si le téléphone est relié, il reçoit la clé tout seul.</p>
     </div>
     </details>
   </section>
@@ -350,9 +350,9 @@ button.primary:hover{filter:brightness(1.08)}
       <div class="row">
         <button class="primary" id="fin-word">Ouvrir dans Word (.doc)</button>
         <button id="fin-copy">Copier tout</button>
-        <a class="btn" href="apprendre.html" style="background:var(--hl);border-color:var(--hl);color:#1E1A10">Réviser dans Alto</a>
+        <a class="btn" href="apprendre.html" style="background:var(--hl);border-color:var(--hl);color:#1E1A10">Réviser dans Notéa</a>
       </div>
-      <p class="muted">« Réviser dans Alto » ouvre Apprendre : les passages que tu as marqués y arrivent tout seuls.</p>
+      <p class="muted">« Réviser dans Notéa » ouvre Apprendre : les passages que tu as marqués y arrivent tout seuls.</p>
     </div>
   </section>
 
@@ -469,7 +469,7 @@ async function chooseEngine() {
     } catch (e) { local = false; }
   }
   if (local) { setMode("local", "Écoute sur l'appareil"); note(""); }
-  else { setMode("cloud", "Écoute en ligne (Google)"); note("Le son passe par Google pour être changé en texte. Alto ne le garde pas. À utiliser pour un test, avec l'accord du prof.", "warn"); }
+  else { setMode("cloud", "Écoute en ligne (Google)"); note("Le son passe par Google pour être changé en texte. Notéa ne le garde pas. À utiliser pour un test, avec l'accord du prof.", "warn"); }
   return true;
 }
 function makeRec() {
