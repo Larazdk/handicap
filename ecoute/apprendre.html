@@ -124,6 +124,7 @@ body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
 .choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .choices button{min-height:60px;font-size:19px;justify-content:flex-start;text-align:left;border-radius:18px;padding:10px 16px}
 .choices button.ok,.mcol button.ok{background:var(--good-bg);border-color:var(--good);color:var(--good)}
+.choices button.sel{outline:3px solid var(--lilas);background:var(--side)}
 .choices button.no,.mcol button.no{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
 .match{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:16px}
 .mcol{display:flex;flex-direction:column;gap:10px}
@@ -165,6 +166,7 @@ body{padding:24px}
 .side .tabs .ic{width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .side .tabs button[aria-selected=true] .ic{background:var(--hero);color:var(--ink-d)}
 .side .tabs .ic{display:none}   /* moins d'icônes : le texte suffit */
+.side .grp{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 18px 2px;opacity:.85}
 .side .tabs button{padding-left:18px}
 .side .tabs button[aria-selected=true]{box-shadow:inset 5px 0 0 var(--lilas)}
 .side .xp{margin:auto 16px 0 0;flex-wrap:wrap;height:auto;padding:12px;border-radius:22px;border:0;gap:8px 10px}
@@ -187,6 +189,7 @@ button.primary:hover{filter:brightness(1.08)}
   .side .tabs{flex-direction:row;overflow-x:auto;gap:6px}
   .side .tabs button{border-radius:999px;min-height:46px;white-space:nowrap;padding:6px 14px 6px 6px}
   .side .tabs .ic{width:32px;height:32px}
+  .side .grp{display:none}
   .side .xp{margin:0}
   .main{padding:20px 16px 32px}
   .pt{font-size:34px}
@@ -204,13 +207,17 @@ button.primary:hover{filter:brightness(1.08)}
     <h1><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="15" width="26" height="25" rx="4.5" fill="#3B2557" transform="rotate(-14 18 27.5)"/><rect x="9" y="12.5" width="26" height="26" rx="4.5" fill="#B9A3F2" transform="rotate(-9 22 25.5)"/><path d="M17 9.5h17.5a4.5 4.5 0 014.5 4.5v15.5l-8 8H17a4.5 4.5 0 01-4.5-4.5V14a4.5 4.5 0 014.5-4.5z" fill="#FFFCF5" stroke="#E2D8F7" stroke-width=".8" transform="rotate(-5 26 23.5)"/><path d="M31 37.5v-5a3 3 0 013-3h5" fill="#E6DCFA" transform="rotate(-5 26 23.5)"/><g transform="rotate(-5 26 23.5)" stroke-linecap="round" stroke-width="3"><path d="M18.5 17h14" stroke="#B9A3F2"/><path d="M18.5 23h13" stroke="#B9A3F2"/><path d="M18.5 29h10" stroke="#FFD84D"/></g><path d="M40.5 3.5c.4 3 1.6 4.2 4.6 4.6-3 .4-4.2 1.6-4.6 4.6-.4-3-1.6-4.2-4.6-4.6 3-.4 4.2-1.6 4.6-4.6z" fill="#3B2557"/><path d="M34.5 2.5l-1 3M45.5 13.5l-3 1" stroke="#9C82EC" stroke-width="1.8" stroke-linecap="round"/></svg>Alto </h1>
     <nav class="nav" aria-label="Pages d'Alto"><a href="./">Écoute</a><a href="apprendre.html" aria-current="page">Apprendre</a></nav>
     <div class="tabs" role="tablist" aria-label="Sections">
-      <button role="tab" aria-selected="true" data-tab="jour"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>Aujourd'hui</button>
-      <button role="tab" aria-selected="false" data-tab="blanche"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></span>Feuille blanche</button>
-      <button role="tab" aria-selected="false" data-tab="jeux"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="4"/><path d="M8 11v4M6 13h4M15.5 12h.01M17.5 14h.01"/></svg></span>Quiz et jeux</button>
-      <button role="tab" aria-selected="false" data-tab="carte"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="4.5" cy="6" r="2"/><circle cx="19.5" cy="6" r="2"/><circle cx="12" cy="20.5" r="2"/><path d="M6.2 7.2l3.4 3M17.8 7.2l-3.4 3M12 15v3.5"/></svg></span>Carte mentale</button>
-      <button role="tab" aria-selected="false" data-tab="planning"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>Mon planning</button>
-      <button role="tab" aria-selected="false" data-tab="notions"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5c3-1.5 6-1.5 8 .5 2-2 5-2 8-.5v14c-3-1.5-6-1.5-8 .5-2-2-5-2-8-.5z"/><path d="M12 5.5v14"/></svg></span>Mes cours</button>
-      <button role="tab" aria-selected="false" data-tab="imprimer"><span class="ic"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3.5" y="9" width="17" height="8" rx="2.5"/><path d="M7 14h10v7H7z"/></svg></span>Imprimer</button>
+      <button role="tab" aria-selected="true" data-tab="jour">Aujourd'hui</button>
+      <span class="grp" role="presentation">Apprendre</span>
+      <button role="tab" aria-selected="false" data-tab="notions">Mes cours</button>
+      <button role="tab" aria-selected="false" data-tab="blanche">Feuille blanche</button>
+      <button role="tab" aria-selected="false" data-tab="carte">Carte mentale</button>
+      <span class="grp" role="presentation">Se tester</span>
+      <button role="tab" aria-selected="false" data-tab="jeux">Quiz et jeux</button>
+      <button role="tab" aria-selected="false" data-tab="examen">Examen blanc</button>
+      <span class="grp" role="presentation">S'organiser</span>
+      <button role="tab" aria-selected="false" data-tab="planning">Mon planning</button>
+      <button role="tab" aria-selected="false" data-tab="imprimer">Imprimer</button>
     </div>
     <div class="xp" id="xp" title="Ta progression"><img src="mascotte.png" alt="" width="40" height="29"><b id="xp-lvl">Niv. 1</b><span class="xpbar"><i id="xp-bar"></i></span><span class="muted" id="xp-n">0 XP</span><span class="plume" id="xp-pl">🪶 0</span></div>
   </aside>
@@ -280,9 +287,10 @@ button.primary:hover{filter:brightness(1.08)}
         <span class="seg2" id="fb-mode"><button data-m="tout" class="on">Tout le cours</button><button data-m="une">Explique une notion</button></span><span class="seg2 niv" aria-label="Difficulté"><button data-n="1">Facile</button><button data-n="2" class="on">Moyen</button><button data-n="3">Difficile</button></span></div>
       <p class="muted" id="fb-hint" hidden></p>
       <p class="msg ok" id="fb-prompt" hidden></p>
+      <div id="fb-cours" class="reader" hidden></div>
       <p class="muted" id="fb-count" hidden></p>
       <textarea id="fb-text" style="min-height:220px;font-size:var(--size)" placeholder="Écris ici, avec tes mots…"></textarea>
-      <div class="row"><button class="primary" id="fb-check">Vérifier</button><button id="fb-voice" hidden>Dicter au lieu d'écrire</button><span class="muted" id="fb-voice-t"></span></div>
+      <div class="row"><button class="primary" id="fb-check">Vérifier</button><button id="fb-help">Je bloque : voir le cours</button><button id="fb-voice" hidden>Dicter au lieu d'écrire</button><span class="muted" id="fb-voice-t"></span></div>
     </div>
     <div class="card" id="fb-res" hidden>
       <h2 id="fb-score"></h2>
@@ -313,6 +321,34 @@ button.primary:hover{filter:brightness(1.08)}
       <div class="match"><div id="mt-l" class="mcol"></div><div id="mt-r" class="mcol"></div></div>
     </div>
     <div class="card" id="jx-end" hidden><h2 id="jx-end-t"></h2><p id="jx-end-s"></p><div class="row"><button class="primary" id="jx-again">Rejouer</button></div></div>
+  </section>
+
+  <!-- ===== Examen blanc ===== -->
+  <section id="tab-examen" hidden style="display:flex;flex-direction:column;gap:20px">
+    <div class="card" id="ex-conf">
+      <h2>Examen blanc</h2>
+      <p class="muted">Comme le jour de l'examen : pas de cours, pas d'aide, la correction à la fin. Choisis la forme de ton vrai examen.</p>
+      <div class="row"><label for="ex-mat"><b>Matière</b></label><select id="ex-mat" style="flex:1 1 200px"></select></div>
+      <div class="row"><b>Forme</b><span class="seg2" id="ex-form"><button data-f="mix" class="on">Mélange</button><button data-f="qcm">QCM</button><button data-f="trou">Texte à trous</button><button data-f="ouv">Questions ouvertes</button></span></div>
+      <div class="row"><b>Questions</b><span class="seg2" id="ex-nb"><button data-n="10" class="on">10</button><button data-n="20">20</button></span>
+        <b>Durée</b><span class="seg2" id="ex-dur"><button data-d="0" class="on">Sans limite</button><button data-d="15">15 min</button><button data-d="30">30 min</button></span>
+        <label class="row" style="gap:6px"><input type="checkbox" id="ex-tt"> Tiers-temps (+ 1/3)</label></div>
+      <div class="row"><button class="primary" id="ex-go">Commencer l'examen</button></div>
+    </div>
+    <div class="card" id="ex-run" hidden>
+      <div class="row" style="justify-content:space-between"><span class="muted" id="ex-pos"></span><b id="ex-time"></b></div>
+      <p class="muted" id="ex-kind"></p>
+      <p class="qtext" id="ex-q"></p>
+      <div class="choices" id="ex-c"></div>
+      <input type="text" id="ex-in" placeholder="Écris ta réponse" autocomplete="off" style="font-size:19px" hidden>
+      <textarea id="ex-ta" placeholder="Explique avec tes mots" hidden></textarea>
+      <div class="row"><button class="primary" id="ex-next">Valider et continuer</button><button id="ex-lire">🔊 Écouter</button><button id="ex-stop">Arrêter l'examen</button></div>
+    </div>
+    <div class="card" id="ex-res" hidden>
+      <h2 id="ex-note"></h2><p class="muted" id="ex-sub"></p>
+      <div id="ex-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="row"><button class="primary" id="ex-again">Refaire un examen</button></div>
+    </div>
   </section>
 
   <!-- ===== Carte mentale ===== -->
@@ -810,7 +846,7 @@ function fbFill() {
 }
 function fbStart(targets) {
   fb.all = db.notions.filter(n => matOf(n) === $("fb-mat").value);
-  fb.targets = targets || fb.all; $("fb-text").value = ""; $("fb-res").hidden = true; const p = $("fb-prompt"); p.hidden = false;
+  fb.targets = targets || fb.all; $("fb-text").value = ""; fb.help = false; $("fb-cours").hidden = true; $("fb-help").textContent = "Je bloque : voir le cours"; $("fb-res").hidden = true; const p = $("fb-prompt"); p.hidden = false;
   if (!fb.all.length) { p.textContent = "Ajoute d'abord un cours dans « Mes cours »."; $("fb-check").disabled = true; return; }
   $("fb-check").disabled = false;
   if (fb.mode === "une") {
@@ -844,7 +880,7 @@ function fbCheck() {
     const res = fb.targets.map(n => [n, holeWords(n).every(w => found(said, w))]);
     const got = res.filter(x => x[1]).length; fb.miss = res.filter(x => !x[1]).map(x => x[0]);
     $("fb-score").textContent = `${got} sur ${res.length} retrouvée${got > 1 ? "s" : ""}`;
-    if (onceToday("fb-" + $("fb-mat").value)) gainN(5 + got, "feuille blanche");
+    if (onceToday("fb-" + $("fb-mat").value)) gainN(Math.round((5 + got) / (fb.help ? 2 : 1)), "feuille blanche");
     $("fb-sub").textContent = fb.miss.length ? "En rouge, ce qui manque. Relis-le, puis recommence : c'est en cherchant qu'on retient." : "Tout y est. Bravo !";
     res.sort((a, b) => a[1] - b[1]).forEach(([n, ok]) => { const r = document.createElement("div"); r.className = "res " + (ok ? "ok" : "no"); r.append(ok ? "✓ " : "✗ ", holeHTML(n, true)); box.append(r); });
     $("fb-miss").textContent = "Recommencer avec ce qui manque"; $("fb-zero").textContent = "Recommencer de zéro";
@@ -1186,6 +1222,71 @@ $("cm-check").addEventListener("click", () => {
   box.hidden = false; if (onceToday("cmv-" + m)) gainN(3 + got, "carte vérifiée");
 });
 
+/* ---------- « Je bloque » : en mode Apprendre, on peut revoir le cours (on gagne alors moitié moins d'XP) ---------- */
+$("fb-help").addEventListener("click", () => {
+  const box = $("fb-cours"), show = box.hidden; box.hidden = !show; $("fb-help").textContent = show ? "Cacher le cours" : "Je bloque : voir le cours";
+  if (show) { fb.help = true; box.replaceChildren(); (fb.mode === "une" && fb.one ? [fb.one] : fb.targets).forEach(n => { const p = document.createElement("p"); p.append(holeHTML(n, true)); box.append(p); }); }
+});
+
+/* ---------- Examen blanc ----------
+   Questions tirées au hasard dans la matière, selon la forme du vrai examen :
+   QCM (4 choix), texte à trous (on écrit le mot), question ouverte (on explique : il faut au moins la moitié des idées clés).
+   Pas de correction pendant l'examen. Note sur 20 à la fin. Les erreurs reviennent dans la révision du jour. */
+let ex = null, exTimer = null;
+const exSel = id => document.querySelector(`#${id} button.on`);
+["ex-form", "ex-nb", "ex-dur"].forEach(id => document.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener("click", () => { document.querySelectorAll(`#${id} button`).forEach(x => x.classList.toggle("on", x === b)); })));
+function exStart() {
+  const m = $("ex-mat").value, form = exSel("ex-form").dataset.f, nb = Number(exSel("ex-nb").dataset.n);
+  let dur = Number(exSel("ex-dur").dataset.d) * 60; if (dur && $("ex-tt").checked) dur = Math.round(dur * 4 / 3);
+  const ns = shuffle(db.notions.filter(n => answerOf(n) && (!m || matOf(n) === m)));
+  if (ns.length < 4) { note("Il faut au moins 4 notions dans cette matière pour un examen.", "warn"); return; }
+  const kinds = ["qcm", "trou", "ouv"];
+  const qs = ns.slice(0, nb).map((n, i) => ({n, k: form === "mix" ? (keyWords(n).length >= 2 ? kinds[i % 3] : kinds[i % 2]) : (form === "ouv" && keyWords(n).length < 2 ? "trou" : form), a: null}));
+  ex = {qs, i: 0, end: dur ? Date.now() + dur * 1000 : 0};
+  $("ex-conf").hidden = true; $("ex-res").hidden = true; $("ex-run").hidden = false; exShow();
+  clearInterval(exTimer); exTimer = setInterval(exTick, 1000); exTick();
+}
+function exTick() {
+  if (!ex) return; if (!ex.end) { $("ex-time").textContent = ""; return; }
+  const left = Math.max(0, Math.round((ex.end - Date.now()) / 1000)); $("ex-time").textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  if (!left) { exSave(); exFinish("Temps écoulé."); }
+}
+function exShow() {
+  const q = ex.qs[ex.i], n = q.n; $("ex-pos").textContent = `Question ${ex.i + 1} sur ${ex.qs.length}`;
+  $("ex-kind").textContent = q.k === "qcm" ? "Choisis la bonne réponse." : q.k === "trou" ? "Écris le mot qui manque." : "Explique avec tes mots.";
+  $("ex-c").hidden = q.k !== "qcm"; $("ex-in").hidden = q.k !== "trou"; $("ex-ta").hidden = q.k !== "ouv";
+  if (q.k === "ouv") $("ex-q").textContent = `Que sais-tu sur « ${answerOf(n)} » ?`; else $("ex-q").replaceChildren(holeHTML(n, false));
+  $("ex-in").value = ""; $("ex-ta").value = ""; const box = $("ex-c"); box.replaceChildren();
+  if (q.k === "qcm") shuffle([answerOf(n), ...distractors(n)]).forEach(a => { const b = document.createElement("button"); b.textContent = a;
+    b.addEventListener("click", () => { box.querySelectorAll("button").forEach(x => x.classList.toggle("sel", x === b)); q.a = a; }); box.append(b); });
+  $("ex-next").textContent = ex.i + 1 < ex.qs.length ? "Valider et continuer" : "Rendre ma copie";
+  (q.k === "trou" ? $("ex-in") : q.k === "ouv" ? $("ex-ta") : $("ex-next")).focus();
+}
+function exSave() { const q = ex.qs[ex.i]; if (q.k === "trou") q.a = $("ex-in").value.trim(); if (q.k === "ouv") q.a = $("ex-ta").value.trim(); }
+function exCorrect(q) {
+  if (!q.a) return false; const n = q.n;
+  if (q.k === "qcm") return q.a === answerOf(n);
+  if (q.k === "trou") return found(new Set(wordsOf(q.a)), answerOf(n));
+  const kw = keyWords(n), said = new Set(wordsOf(q.a)); return kw.filter(w => found(said, w)).length >= Math.ceil(kw.length / 2);
+}
+function exFinish(why) {
+  clearInterval(exTimer); $("ex-run").hidden = true; $("ex-res").hidden = false; $("ex-conf").hidden = false;
+  const res = ex.qs.map(q => [q, exCorrect(q)]), ok = res.filter(x => x[1]).length, sur20 = Math.round(ok / res.length * 200) / 10;
+  $("ex-note").textContent = `${String(sur20).replace(".", ",")} / 20`;
+  $("ex-sub").textContent = (why ? why + " " : "") + `${ok} bonne${ok > 1 ? "s" : ""} réponse${ok > 1 ? "s" : ""} sur ${res.length}. Les erreurs reviennent dans ta révision du jour.`;
+  const box = $("ex-list"); box.replaceChildren();
+  res.forEach(([q, good]) => { const r = document.createElement("div"); r.className = "res " + (good ? "ok" : "no");
+    r.append(good ? "✓ " : "✗ ", holeHTML(q.n, true)); if (!good && q.a) { const y = document.createElement("div"); y.className = "muted"; y.textContent = "Ta réponse : " + q.a; r.append(y); } box.append(r);
+    if (!good) { q.n.due = Date.now(); if (q.n.last) q.n.D = clampD(q.n.D + 0.5); } });
+  save(); renderToday(); if (onceToday("examen")) gainN(10 + ok, "examen blanc"); ex = null;
+}
+$("ex-go").addEventListener("click", exStart);
+$("ex-again").addEventListener("click", () => { $("ex-res").hidden = true; $("ex-conf").scrollIntoView({block: "start"}); });
+$("ex-next").addEventListener("click", () => { exSave(); if (ex.i + 1 < ex.qs.length) { ex.i++; exShow(); } else exFinish(""); });
+$("ex-stop").addEventListener("click", () => { exSave(); exFinish("Examen arrêté."); });
+$("ex-in").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("ex-next").click(); } });
+$("ex-lire").addEventListener("click", () => { const q = ex && ex.qs[ex.i]; if (q) speak(q.k === "ouv" ? $("ex-q").textContent : sayNotion(q.n, false)); });
+
 /* ---------- Imprimer ---------- */
 document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click", () => {
   const list = b.dataset.print === "jour" ? todayQueue() : db.notions;
@@ -1204,11 +1305,12 @@ function tab(name) {
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
   { const t = document.querySelector(`[data-tab="${name}"]`).textContent.trim(), i = t.lastIndexOf(" "), h = $("page-t"); h.replaceChildren();
     const sw = document.createElement("span"); sw.className = "sw"; sw.textContent = i > 0 ? t.slice(i + 1) : t; h.append(i > 0 ? t.slice(0, i + 1) : "", sw); window.scrollTo(0, 0); }
-  ["jour", "blanche", "jeux", "carte", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
+  ["jour", "blanche", "jeux", "examen", "carte", "planning", "notions", "imprimer"].forEach(t => { $("tab-" + t).hidden = t !== name; });
   if (name === "notions") { renderList(); const dl = $("mat-list"); dl.replaceChildren(); matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = m; dl.append(o); }); }
   if (name === "jour") renderToday();
   if (name === "blanche") { fbFill(); fbStart(); }
   if (name === "jeux") fillMats($("jx-mat"));
+  if (name === "examen") fillMats($("ex-mat"));
   if (name === "carte") { fillMats($("cm-mat")); $("cm-mat").options[0].textContent = "Choisis une matière"; $("cm-text").value = db.maps[$("cm-mat").value || "_"] || ""; drawMap(); }
   if (name === "planning") { renderMats(); renderActs(); renderPlan(); }
 }
