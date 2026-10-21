@@ -229,8 +229,10 @@ body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
       <h2>Feuille blanche</h2>
       <p class="muted">Sans regarder ton cours, écris tout ce dont tu te souviens. Puis appuie sur « Vérifier » : tu vois ce que tu as retrouvé et ce qui manque. Les fautes d'orthographe ne comptent pas.</p>
       <div class="row"><label for="fb-mat"><b>Matière</b></label><select id="fb-mat" style="flex:1 1 200px"></select>
-        <span class="seg2" id="fb-mode"><button data-m="tout" class="on">Tout le cours</button><button data-m="une">Explique une notion</button></span></div>
+        <span class="seg2" id="fb-mode"><button data-m="tout" class="on">Tout le cours</button><button data-m="une">Explique une notion</button></span><span class="seg2 niv" aria-label="Difficulté"><button data-n="1">Facile</button><button data-n="2" class="on">Moyen</button><button data-n="3">Difficile</button></span></div>
+      <p class="muted" id="fb-hint" hidden></p>
       <p class="msg ok" id="fb-prompt" hidden></p>
+      <p class="muted" id="fb-count" hidden></p>
       <textarea id="fb-text" style="min-height:220px;font-size:var(--size)" placeholder="Écris ici, avec tes mots…"></textarea>
       <div class="row"><button class="primary" id="fb-check">Vérifier</button><button id="fb-voice" hidden>Dicter au lieu d'écrire</button><span class="muted" id="fb-voice-t"></span></div>
     </div>
@@ -248,13 +250,14 @@ body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
       <h2>Quiz et jeux</h2>
       <p class="muted">Pour s'entraîner autrement. Pas de chrono : on gagne de l'XP en travaillant, pas en allant vite.</p>
       <div class="row"><label for="jx-mat"><b>Matière</b></label><select id="jx-mat" style="flex:1 1 200px"></select>
-        <span class="seg2" id="jx-mode"><button data-m="quiz" class="on">Quiz</button><button data-m="match">Associer</button></span>
+        <span class="seg2" id="jx-mode"><button data-m="quiz" class="on">Quiz</button><button data-m="match">Associer</button></span><span class="seg2 niv" aria-label="Difficulté"><button data-n="1">Facile</button><button data-n="2" class="on">Moyen</button><button data-n="3">Difficile</button></span>
         <button class="primary" id="jx-go">Commencer</button></div>
     </div>
     <div class="card" id="qz" hidden>
       <div class="row" style="justify-content:space-between"><span class="muted" id="qz-pos"></span><span class="muted" id="qz-score"></span></div>
       <p class="qtext" id="qz-q"></p>
       <div class="choices" id="qz-c"></div>
+      <div class="row" id="qz-type" hidden><input type="text" id="qz-in" placeholder="Écris la réponse" style="flex:1 1 240px;font-size:19px" autocomplete="off"><button class="primary" id="qz-ok">Vérifier</button></div>
       <div class="row"><button id="qz-lire">🔊 Écouter</button><button class="primary" id="qz-next" hidden>Suivante</button></div>
     </div>
     <div class="card" id="mt" hidden>
@@ -269,8 +272,10 @@ body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
     <div class="card">
       <h2>Ma carte mentale</h2>
       <p class="muted">Écris tes idées avec tes mots, une par ligne. Mets 2 espaces (ou un tiret) devant une ligne pour l'accrocher à l'idée du dessus. La carte se dessine toute seule.</p>
-      <div class="row"><label for="cm-mat"><b>Matière</b></label><select id="cm-mat" style="flex:1 1 200px"></select><button id="cm-notions">Partir de mes notions</button><button id="cm-print">Imprimer</button></div>
+      <div class="row"><label for="cm-mat"><b>Matière</b></label><select id="cm-mat" style="flex:1 1 200px"></select><span class="seg2 niv" aria-label="Difficulté"><button data-n="1">Facile</button><button data-n="2" class="on">Moyen</button><button data-n="3">Difficile</button></span><button id="cm-notions">Partir de mes notions</button><button id="cm-check">Vérifier ma carte</button><button id="cm-print">Imprimer</button></div>
+      <p class="muted" id="cm-help">Moyen : seulement les grandes idées. À toi d'écrire les détails.</p>
       <div class="cm-wrap"><textarea id="cm-text" spellcheck="false" placeholder="Droit de propriété&#10;  usus : utiliser&#10;  fructus : les fruits&#10;  abusus : vendre ou détruire"></textarea><div id="cm-svg" class="cm-svg"></div></div>
+      <div id="cm-res" hidden style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
   </section>
 
@@ -761,8 +766,13 @@ function fbStart(targets) {
   $("fb-check").disabled = false;
   if (fb.mode === "une") {
     const pool = fb.targets.filter(n => keyWords(n).length >= 2); fb.one = pool[Math.floor(Math.random() * pool.length)] || fb.targets[0];
-    p.textContent = `Explique avec tes mots : « ${holeWords(fb.one).join(" ")} »`;
-  } else p.textContent = `${fb.targets.length} notion${fb.targets.length > 1 ? "s" : ""} à retrouver en ${$("fb-mat").value}. Écris tout ce que tu sais, dans le désordre si tu veux.`;
+    p.textContent = `Explique avec tes mots : « ${holeWords(fb.one).join(" ")} »` + (db.niv === 3 ? ` — en ${maxWords(fb.one)} mots au maximum.` : "");
+    $("fb-hint").hidden = db.niv !== 1; $("fb-hint").textContent = "Indices : " + keyWords(fb.one).map(firstLetters).join(", ");
+    $("fb-count").hidden = db.niv !== 3; $("fb-count").textContent = `0 mot sur ${maxWords(fb.one)} au maximum`;
+  } else {
+    p.textContent = db.niv === 3 ? `Écris tout ce que tu sais en ${$("fb-mat").value}.` : `${fb.targets.length} notion${fb.targets.length > 1 ? "s" : ""} à retrouver en ${$("fb-mat").value}. Écris tout ce que tu sais, dans le désordre si tu veux.`;
+    $("fb-hint").hidden = db.niv !== 1; $("fb-hint").textContent = "Indices : " + fb.targets.map(n => firstLetters(answerOf(n))).join(", "); $("fb-count").hidden = true;
+  }
   $("fb-text").focus();
 }
 function fbCheck() {
@@ -771,19 +781,21 @@ function fbCheck() {
   const box = $("fb-list"); box.replaceChildren(); fb.miss = [];
   if (fb.mode === "une") {
     const n = fb.one, kw = keyWords(n), ok = kw.filter(w => found(said, w));
+    const nw = $("fb-text").value.trim().split(/\s+/).length;
+    if (db.niv === 3 && nw > maxWords(n)) { note(`Trop long : ${nw} mots. Essaie en ${maxWords(n)} mots au maximum.`, "warn"); return; }
     const pc = kw.length ? ok.length / kw.length : 0;
     $("fb-score").textContent = pc >= 0.6 ? "Bien expliqué !" : pc >= 0.3 ? "C'est un début" : "Il manque l'essentiel";
     $("fb-sub").textContent = `Tu as utilisé ${ok.length} des ${kw.length} idées clés. Ce n'est pas la seule façon de bien dire : relis la phrase du cours et compare.`;
     const r = document.createElement("div"); r.className = "res " + (pc >= 0.6 ? "ok" : "no"); r.append(holeHTML(n, true));
     const k = document.createElement("div"); kw.forEach(w => { const s = document.createElement("span"); s.className = "kw " + (ok.includes(w) ? "ok" : "no"); s.textContent = w; k.append(s); });
     box.append(r, k); if (pc < 0.6) fb.miss = [n];
-    if (onceToday("ex-" + n.id)) gain(3, "explication");
+    if (onceToday("ex-" + n.id)) gainN(3, "explication");
     $("fb-miss").textContent = "Une autre notion"; $("fb-zero").textContent = "Réessayer celle-ci";
   } else {
     const res = fb.targets.map(n => [n, holeWords(n).every(w => found(said, w))]);
     const got = res.filter(x => x[1]).length; fb.miss = res.filter(x => !x[1]).map(x => x[0]);
     $("fb-score").textContent = `${got} sur ${res.length} retrouvée${got > 1 ? "s" : ""}`;
-    if (onceToday("fb-" + $("fb-mat").value)) gain(5 + got, "feuille blanche");
+    if (onceToday("fb-" + $("fb-mat").value)) gainN(5 + got, "feuille blanche");
     $("fb-sub").textContent = fb.miss.length ? "En rouge, ce qui manque. Relis-le, puis recommence : c'est en cherchant qu'on retient." : "Tout y est. Bravo !";
     res.sort((a, b) => a[1] - b[1]).forEach(([n, ok]) => { const r = document.createElement("div"); r.className = "res " + (ok ? "ok" : "no"); r.append(ok ? "✓ " : "✗ ", holeHTML(n, true)); box.append(r); });
     $("fb-miss").textContent = "Recommencer avec ce qui manque"; $("fb-zero").textContent = "Recommencer de zéro";
@@ -995,18 +1007,23 @@ function quizShow() {
   const n = qz.list[qz.i]; $("qz-pos").textContent = `Question ${qz.i + 1} sur ${qz.list.length}`; $("qz-score").textContent = `${qz.ok} juste${qz.ok > 1 ? "s" : ""}`;
   $("qz-q").replaceChildren(holeHTML(n, false)); $("qz-next").hidden = true;
   const box = $("qz-c"); box.replaceChildren();
-  shuffle([answerOf(n), ...distractors(n)]).forEach(a => { const b = document.createElement("button"); b.textContent = a; b.addEventListener("click", () => quizAnswer(b, a === answerOf(n))); box.append(b); });
+  $("qz-type").hidden = db.niv !== 3; box.hidden = db.niv === 3;
+  if (db.niv === 3) { $("qz-in").value = ""; $("qz-in").disabled = false; $("qz-in").focus(); return; }
+  shuffle([answerOf(n), ...distractors(n, db.niv === 1 ? 1 : 3)]).forEach(a => { const b = document.createElement("button"); b.textContent = a; b.addEventListener("click", () => quizAnswer(b, a === answerOf(n))); box.append(b); });
 }
 function quizAnswer(btn, good) {
   if (!$("qz-next").hidden) return; const n = qz.list[qz.i], now = Date.now();
   [...$("qz-c").children].forEach(b => { if (b.textContent === answerOf(n)) b.classList.add("ok"); });
-  if (!good) btn.classList.add("no"); else qz.ok++;
+  if (btn) { if (!good) btn.classList.add("no"); } else { $("qz-in").disabled = true; note(good ? "Juste !" : "La réponse était : " + answerOf(n), good ? "ok" : "warn"); }
+  if (good) qz.ok++;
   $("qz-q").replaceChildren(holeHTML(n, true));
   if (!n.last || n.due <= now) { if (!n.last) db.newToday++; schedule(n, good ? 2 : 1, now); save(); }
-  if (onceToday("n" + n.id)) gain(1, "quiz");
+  if (onceToday("n" + n.id)) gainN(1, "quiz");
   $("qz-next").hidden = false; $("qz-next").textContent = qz.i + 1 < qz.list.length ? "Suivante" : "Voir le score"; $("qz-next").focus();
 }
 $("qz-next").addEventListener("click", () => { qz.i++; if (qz.i < qz.list.length) quizShow(); else jeuFin(`${qz.ok} sur ${qz.list.length}`, qz.ok === qz.list.length ? "Parfait !" : "Les notions ratées reviendront plus tôt dans ta révision."); });
+$("qz-ok").addEventListener("click", () => { const v = $("qz-in").value.trim(); if (!v) return; quizAnswer(null, found(new Set(wordsOf(v)), answerOf(qz.list[qz.i]))); });
+$("qz-in").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if ($("qz-next").hidden) $("qz-ok").click(); else $("qz-next").click(); } });
 $("qz-lire").addEventListener("click", () => { const n = qz.list[qz.i]; if (n) speak(sayNotion(n, !$("qz-next").hidden)); });
 
 /* ---------- Jeu « Associer » : 5 mots à relier à leur phrase. Pas de chrono. ---------- */
@@ -1028,7 +1045,7 @@ function matchStart() {
 }
 function jeuFin(t, sub) {
   $("qz").hidden = true; $("mt").hidden = true; $("jx-end").hidden = false; $("jx-end-t").textContent = t; $("jx-end-s").textContent = sub;
-  if (onceToday("jeu-" + jx)) gain(5, "jeu"); renderToday();
+  if (onceToday("jeu-" + jx)) gainN(5, "jeu"); renderToday();
 }
 let jx = "quiz";
 document.querySelectorAll("#jx-mode button").forEach(b => b.addEventListener("click", () => { jx = b.dataset.m; document.querySelectorAll("#jx-mode button").forEach(x => x.classList.toggle("on", x === b)); }));
@@ -1076,7 +1093,9 @@ function drawMap() {
     nodes += bubble(x, y, c.t, 1, col);
   });
   nodes += bubble(cx, cy, tree.t || m || "Ma carte", 0);
-  const x0 = Math.min(...BOX.map(b => b[0])) - 16, y0 = Math.min(...BOX.map(b => b[1])) - 16, x1 = Math.max(...BOX.map(b => b[2])) + 16, y1 = Math.max(...BOX.map(b => b[3])) + 16;
+  let x0 = Math.min(...BOX.map(b => b[0])) - 16, y0 = Math.min(...BOX.map(b => b[1])) - 16, x1 = Math.max(...BOX.map(b => b[2])) + 16, y1 = Math.max(...BOX.map(b => b[3])) + 16;
+  if (x1 - x0 < 900) { const c = (x0 + x1) / 2; x0 = c - 450; x1 = c + 450; }      // jamais trop zoomé quand il y a peu d'idées
+  if (y1 - y0 < 640) { const c = (y0 + y1) / 2; y0 = c - 320; y1 = c + 320; }
   $("cm-svg").innerHTML = `<svg viewBox="${x0} ${y0} ${x1 - x0} ${y1 - y0}" role="img" aria-label="Carte mentale">${lines}${nodes}</svg>`;
   db.maps[m || "_"] = $("cm-text").value; save();
 }
@@ -1086,10 +1105,37 @@ $("cm-notions").addEventListener("click", () => {
   const m = $("cm-mat").value, ns = db.notions.filter(n => !m || matOf(n) === m);
   if (!ns.length) { note("Pas encore de notion dans cette matière.", "warn"); return; }
   const prev = $("cm-text").value.trim();
-  $("cm-text").value = (prev ? prev + "\n" : (m || "Mes cours") + "\n") + ns.slice(0, 8).map(n => "  " + answerOf(n) + (keyWords(n).length ? "\n    " + keyWords(n).slice(0, 3).join(", ") : "")).join("\n");
+  if (db.niv === 3) { $("cm-text").value = (m || "Mes cours") + "\n"; drawMap(); $("cm-text").focus(); note("Difficile : seulement le sujet. Écris tout de mémoire, puis « Vérifier ma carte ».", "ok"); return; }
+  $("cm-text").value = (prev ? prev + "\n" : (m || "Mes cours") + "\n") + ns.slice(0, 8).map(n => "  " + answerOf(n) + (db.niv === 1 && keyWords(n).length ? "\n    " + keyWords(n).slice(0, 3).join(", ") : "")).join("\n");
   drawMap(); note("Voilà une base. Réécris chaque idée avec tes mots : c'est ça qui fait retenir.", "ok");
 });
 $("cm-print").addEventListener("click", () => { const sh = $("sheet"); sh.innerHTML = `<h2>Alto · Carte mentale · ${esc($("cm-mat").value || "")}</h2>` + $("cm-svg").innerHTML; window.print(); });
+
+/* ---------- Niveau de difficulté (Facile, Moyen, Difficile) ----------
+   Feuille blanche : Facile = des indices (premières lettres) ; Difficile = expliquer en peu de mots.
+   Quiz : Facile = 2 choix ; Moyen = 4 choix ; Difficile = écrire la réponse soi-même.
+   Carte mentale : Facile = les idées et des détails ; Moyen = les grandes idées ; Difficile = juste le sujet.
+   Plus c'est difficile, plus on gagne d'XP (×1, ×1,5, ×2). */
+db.niv = db.niv || 2;
+const NIVX = {1: 1, 2: 1.5, 3: 2};
+const gainN = (n, why) => gain(Math.round(n * NIVX[db.niv]), why);
+function setNiv(v) { db.niv = v; save(); document.querySelectorAll(".niv button").forEach(b => b.classList.toggle("on", Number(b.dataset.n) === v));
+  $("cm-help").textContent = v === 1 ? "Facile : tes notions et des mots-clés sont déjà là. Réécris-les avec tes mots." : v === 2 ? "Moyen : seulement les grandes idées. À toi d'écrire les détails." : "Difficile : juste le sujet. Écris tout de mémoire, puis appuie sur « Vérifier ma carte »."; }
+document.querySelectorAll(".niv button").forEach(b => b.addEventListener("click", () => { setNiv(Number(b.dataset.n)); if (!$("tab-blanche").hidden) fbStart(); }));
+setNiv(db.niv);
+const firstLetters = w => w.split(/\s+/).map(x => x.slice(0, 2) + "…").join(" ");
+const maxWords = n => Math.max(6, Math.round(keyWords(n).length * 1.5));
+$("fb-text").addEventListener("input", () => { if (fb.mode !== "une" || db.niv !== 3 || !fb.one) return;
+  const c = $("fb-text").value.trim().split(/\s+/).filter(Boolean).length, m = maxWords(fb.one);
+  $("fb-count").textContent = `${c} mot${c > 1 ? "s" : ""} sur ${m} au maximum`; $("fb-count").style.color = c > m ? "var(--bad)" : ""; });
+$("cm-check").addEventListener("click", () => {
+  const m = $("cm-mat").value, ns = db.notions.filter(n => answerOf(n) && (!m || matOf(n) === m)), said = new Set(wordsOf($("cm-text").value));
+  if (!ns.length) { note("Choisis une matière qui a des notions.", "warn"); return; }
+  const res = ns.map(n => [n, found(said, answerOf(n))]), got = res.filter(x => x[1]).length, box = $("cm-res"); box.replaceChildren();
+  const h = document.createElement("h3"); h.textContent = `${got} notion${got > 1 ? "s" : ""} sur ${ns.length} dans ta carte`; box.append(h);
+  res.sort((a, b) => a[1] - b[1]).forEach(([n, ok]) => { const r = document.createElement("div"); r.className = "res " + (ok ? "ok" : "no"); r.append(ok ? "✓ " : "✗ ", holeHTML(n, true)); box.append(r); });
+  box.hidden = false; if (onceToday("cmv-" + m)) gainN(3 + got, "carte vérifiée");
+});
 
 /* ---------- Imprimer ---------- */
 document.querySelectorAll("[data-print]").forEach(b => b.addEventListener("click", () => {
