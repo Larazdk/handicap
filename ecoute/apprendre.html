@@ -164,6 +164,9 @@ body{padding:24px}
 .side .tabs button[aria-selected=true]{background:var(--bg);color:var(--ink)}
 .side .tabs .ic{width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .side .tabs button[aria-selected=true] .ic{background:var(--hero);color:var(--ink-d)}
+.side .tabs .ic{display:none}   /* moins d'icônes : le texte suffit */
+.side .tabs button{padding-left:18px}
+.side .tabs button[aria-selected=true]{box-shadow:inset 5px 0 0 var(--lilas)}
 .side .xp{margin:auto 16px 0 0;flex-wrap:wrap;height:auto;padding:12px;border-radius:22px;border:0;gap:8px 10px}
 .side .xpbar{flex:1 1 80px}
 .main{padding:30px 44px 44px;display:flex;flex-direction:column;gap:22px;min-width:0}
