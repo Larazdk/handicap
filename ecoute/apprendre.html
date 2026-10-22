@@ -84,10 +84,10 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 .sent:hover{background:var(--side)}
 .sent.on{background:var(--hl);color:#1E1A10}
 .reader h3.rt,.reader h4.rt{margin:8px 0 0;font-family:var(--f-title);color:var(--ink)} .reader h4.rt{font-size:17px}
-.rtag{display:inline-block;font-size:13px;font-weight:700;padding:1px 9px;border-radius:999px;background:var(--side);color:var(--ink-d);margin-right:2px;vertical-align:1px}
-.sent.r-ex{color:var(--muted)} .sent.r-ex .rtag{background:transparent;border:1px solid var(--line);color:var(--muted)}
-.sent.r-def .rtag,.sent.r-ret .rtag,.sent.r-q .rtag{background:var(--tint)}
-.reader[data-view=ess] .sent:not(.ess),.reader[data-view=ess] .rpar:not(:has(.ess)){display:none}
+.rtag{display:inline-flex;font:inherit;font-size:13px;font-weight:700;min-height:0;padding:1px 9px;border-radius:999px;border:0;background:var(--side);color:var(--ink-d);margin-right:4px;vertical-align:1px;cursor:pointer}
+.unit.r-ex .sent{color:var(--muted)} .unit.r-ex .rtag{background:transparent;box-shadow:inset 0 0 0 1px var(--line);color:var(--muted)}
+.unit.r-def .rtag,.unit.r-ret .rtag,.unit.r-q .rtag{background:var(--tint)}
+.reader[data-view=ess] .unit:not(.ess),.reader[data-view=ess] .rpar:not(:has(.ess)){display:none}
 .ana{display:flex;flex-direction:column;gap:10px}
 .ana details{border:1px solid var(--line);border-radius:16px;padding:10px 14px}
 .ana summary{cursor:pointer;min-height:30px;display:flex;align-items:center;gap:8px}
@@ -872,6 +872,7 @@ function isTitle(line) {
   if (w <= 8 && !/[.!?;,:]$/.test(l) && /^\p{Lu}/u.test(l) && !/\s:\s/.test(l)) return l === l.toUpperCase() && /\p{L}{3}/u.test(l) ? 1 : 2;
   return 0;
 }
+const isEss = (o, cut) => o.role !== "ex" && (["def", "ret", "q", "form", "regle"].includes(o.role) || o.score >= cut);
 function analyse(text) {
   const secs = [{title: "", level: 0, blocks: []}]; let buf = [];
   const flush = () => { if (buf.length) { secs[secs.length - 1].blocks.push(buf.join("\n")); buf = []; } };
@@ -880,27 +881,74 @@ function analyse(text) {
   flush();
   const all = [];
   secs.forEach((s, si) => { s.blocks = s.blocks.flatMap(b => splitSentences(b)).map(par => par.map(t => { const o = {text: t, role: roleOf(t), sec: si}; all.push(o); return o; })); });
-  const kw = new Map();
-  const add = (w, bonus, ex) => { const c = clean(w); if (c.length < 4 || STOP.has(c) || KSTOP.has(c) || /^\d+$/.test(c)) return;
-    const k = stem(norm(c)); let o = kw.get(k); if (!o) kw.set(k, o = {forms: new Map(), score: 0, ex: 0, other: 0});
-    const f = core(w); o.forms.set(f, (o.forms.get(f) || 0) + 1); o.score += 1 + bonus; ex ? o.ex++ : o.other++; };
-  secs.forEach(s => s.title && s.title.split(/\s+/).forEach(w => add(w, 3)));
-  all.forEach(o => { const t = o.text.split(/\s+/);
-    const v = o.role === "def" ? t.findIndex((w, i) => i > 0 && i < 8 && (VERBS.has(clean(w)) || w === ":")) : -1;
-    t.forEach((w, i) => add(w, (i < v ? 4 : 0) + (o.role === "ret" || o.role === "q" ? 1.5 : 0) + (i > 0 && /^\p{Lu}\p{Ll}/u.test(w) ? 0.5 : 0), o.role === "ex")); });
-  const list = [...kw.entries()].map(([k, o]) => ({k, score: o.other ? o.score : o.score * 0.4,
-    label: [...o.forms.entries()].sort((a, b) => b[1] - a[1])[0][0]})).filter(x => x.score >= 2).sort((a, b) => b.score - a.score);
-  const n3 = Math.max(3, Math.round(list.length * 0.12)), n2 = n3 + Math.round(list.length * 0.25), kwl = new Map();
-  list.forEach((x, i) => { x.lv = i < n3 ? 3 : i < n2 ? 2 : 1; kwl.set(x.k, x.lv); });
+  const freq = new Map(); all.forEach(o => o.text.split(/\s+/).forEach(w => { const c = clean(w); freq.set(c, (freq.get(c) || 0) + 1); }));
+  const keywords = () => {
+    const kw = new Map();
+    const add = (w, bonus, ex) => { const c = clean(w); if (c.length < 4 || STOP.has(c) || KSTOP.has(c) || /^\d+$/.test(c)) return;
+      const k = stem(norm(c)); let o = kw.get(k); if (!o) kw.set(k, o = {forms: new Map(), score: 0, ex: 0, other: 0});
+      const f = core(w); o.forms.set(f, (o.forms.get(f) || 0) + 1); o.score += 1 + bonus; ex ? o.ex++ : o.other++; };
+    secs.forEach(s => s.title && s.title.split(/\s+/).forEach(w => add(w, 3)));
+    all.forEach(o => { const t = o.text.split(/\s+/);
+      const v = o.role === "def" ? t.findIndex((w, i) => i > 0 && i < 8 && (VERBS.has(clean(w)) || w === ":")) : -1;
+      t.forEach((w, i) => add(w, (i < v ? 4 : 0) + (o.role === "ret" || o.role === "q" ? 1.5 : 0) + (i > 0 && /^\p{Lu}\p{Ll}/u.test(w) ? 0.5 : 0), o.role === "ex")); });
+    const list = [...kw.entries()].map(([k, o]) => ({k, score: o.other ? o.score : o.score * 0.4,
+      label: [...o.forms.entries()].sort((a, b) => b[1] - a[1])[0][0]})).filter(x => x.score >= 2).sort((a, b) => b.score - a.score);
+    const n3 = Math.max(3, Math.round(list.length * 0.12)), n2 = n3 + Math.round(list.length * 0.25), kwl = new Map();
+    list.forEach((x, i) => { x.lv = i < n3 ? 3 : i < n2 ? 2 : 1; kwl.set(x.k, x.lv); });
+    return {list, kwl};
+  };
+  let {list, kwl} = keywords();
+  all.forEach(o => o.base = o.role);
+  const defTerms = new Map();             // les notions clés définies dans le cours, et où elles sont définies
+  all.forEach((o, idx) => { o.idx = idx; if (o.role !== "def") return; const t = o.text.split(/\s+/), v = t.findIndex((w, i) => i > 0 && i < 8 && (VERBS.has(clean(w)) || w === ":"));
+    t.slice(0, Math.max(v, 0)).forEach(w => { const c = clean(w); if (c.length >= 4 && !STOP.has(c)) { const k = stem(norm(c)); if (!defTerms.has(k)) defTerms.set(k, {at: idx, label: core(w)}); } }); });
+  secs.forEach(s => s.blocks.forEach(par => par.forEach((o, i) => {           // 2e passage : les exemples sans mot « exemple »
+    if (!["info", "cause", "date", "regle", "ex"].includes(o.role)) return;
+    const r = exampleScore(o, {kwl, freq, prev: par[i - 1], defTerms, idx: o.idx}); o.why = r.why;
+    if (r.sc >= 3) o.role = "ex";
+  })));
+  ({list, kwl} = keywords());
   all.forEach(o => { const seen = new Set(); let sum = 0;
     o.text.split(/\s+/).forEach(w => { const k = stem(norm(clean(w))); if (kwl.has(k) && !seen.has(k)) { seen.add(k); sum += kwl.get(k); } });
     o.score = ROLES[o.role][1] + Math.min(3, sum / 3); });
   const sc = all.filter(o => o.role !== "ex").map(o => o.score).sort((a, b) => b - a), cut = sc[Math.floor(sc.length * 0.4)] || 0;
-  all.forEach(o => { o.ess = o.role !== "ex" && (["def", "ret", "q", "form", "regle"].includes(o.role) || o.score >= cut); });
+  all.forEach(o => { o.ess = isEss(o, cut); });
   const qs = all.filter(o => o.role === "q").map(o => o.text);           // les questions du cours
   all.filter(o => o.role === "def").forEach(o => { const t = o.text.split(/\s+/), v = t.findIndex((w, i) => i > 0 && i < 8 && VERBS.has(clean(w)));
     if (v > 0 && v <= 4) qs.push("Qu'est-ce que « " + t.slice(0, v).join(" ").replace(/^(l['’]|le |la |les |un |une )/i, "") + " » ?"); });
-  return {secs, all, list, kwl, qs};
+  return {secs, all, list, kwl, qs, cut};
+}
+/* Trouver les exemples sans IA : on additionne des indices.
+   Un exemple parle d'un cas précis (une personne, une somme, un lieu, un âge), avec des mots qu'on ne revoit pas ailleurs dans le cours,
+   peu de mots clés, des « un, une, des » plutôt que « le, la, les », et il suit souvent une définition ou une règle. */
+const R_EXPLUS = /\b(supposons|imaginons|prenons|soit un|soit une|dans le cas où|au cas où|cas de figure|cf\.|e\.g\.|ex\.|comme lorsque|c'est ce qui se passe|on peut citer|à l'image de)\b/i;
+const R_PERS = /\b(M\.|Mme|Mlle|Monsieur|Madame|Me)\s+\p{Lu}|\b(Paul|Pierre|Marie|Jean|Julie|Léa|Lucas|Emma|Hugo|Sophie|Thomas|Camille|Louis|Alice|Tom|Sarah|Nathan|Chloé|Max|Inès|Adam|Jules|Zoé|Léo|Anna|Paris|Lyon|Marseille)\b/u;
+const R_QTE = /\d[\d\s.,]*\s?(€|euros?|\$|dollars?|ans|mois|jours|heures|km|kg|g|m²|m|cm|litres?|%|personnes|élèves|habitants)\b/i;
+function exampleScore(o, ctx) {
+  const why = []; let sc = 0;
+  const add = (p, w) => { sc += p; why.push(w); };
+  if (R_EX0.test(o.text) || R_EX.test(o.text) || R_EXPLUS.test(o.text)) add(3, "un mot d'exemple");
+  if (R_PERS.test(o.text)) add(2, "une personne ou un lieu précis");
+  else { const caps = o.text.split(/\s+/).slice(1).filter(w => /^\p{Lu}\p{Ll}{2,}/u.test(core(w)) && !ctx.kwl.has(stem(norm(clean(w)))) && (ctx.freq.get(clean(w)) || 0) === 1);
+    if (caps.length) add(1.5, "un nom propre"); }
+  if (R_QTE.test(o.text)) add(1.5, "une somme ou une quantité");
+  if (/^si\s/i.test(o.text) || /\b(un jour|hier|l'an dernier|récemment)\b/i.test(o.text)) add(1, "une situation inventée");
+  const words = o.text.split(/\s+/), cont = words.map(w => clean(w)).filter(c => c.length >= 4 && !STOP.has(c));
+  if (words.length >= 8 && cont.length) {
+    const kwShare = cont.filter(c => (ctx.kwl.get(stem(norm(c))) || 0) >= 2).length / cont.length;
+    const uniq = cont.filter(c => (ctx.freq.get(c) || 0) === 1).length / cont.length;
+    if (kwShare < 0.2 && ctx.prev && ["def", "regle", "form"].includes(ctx.prev.role)) add(1.5, "elle suit une définition ou une règle, avec peu de mots clés");
+    if (uniq >= 0.6) add(1, "des mots qu'on ne revoit pas dans le cours");
+    // Ton idée : la phrase reprend une notion clé déjà définie, mais avec des mots concrets à elle → elle l'illustre.
+    const term = [...ctx.defTerms.entries()].find(([k, d]) => d.at < ctx.idx && cont.some(c => stem(norm(c)) === k));
+    const concret = (o.text.match(/\b(un|une|des)\s/gi) || []).length >= 1 || R_PERS.test(o.text) || R_QTE.test(o.text);
+    const autres = term ? cont.filter(c => stem(norm(c)) !== term[0]) : [];
+    const autresCles = autres.length ? autres.filter(c => (ctx.kwl.get(stem(norm(c))) || 0) >= 2).length / autres.length : 1;
+    if (term && concret && (uniq >= 0.4 || autresCles <= 0.25)) add(2, "elle illustre la notion « " + term[1].label + " » avec un cas concret");
+    const ind = (o.text.match(/\b(un|une|des)\s/gi) || []).length, def = (o.text.match(/\b(le|la|les|l['’])/gi) || []).length;
+    if (ind >= 2 && ind > def) add(1, "des « un, une, des » : un cas précis");
+  }
+  return {sc, why};
 }
 let ana = null;
 function renderAna() {
@@ -908,8 +956,17 @@ function renderAna() {
   ana.secs.forEach((s, si) => {
     if (s.title) { const h = document.createElement(s.level === 1 ? "h3" : "h4"); h.className = "rt"; h.id = "sec-" + si; h.textContent = s.title; box.append(h); }
     s.blocks.forEach(par => { const p = document.createElement("p"); p.className = "rpar"; p.style.margin = "0";
-      par.forEach(o => { const sp = document.createElement("span"); sp.className = "r-" + o.role + (o.ess ? " ess" : "");
-        if (ROLES[o.role][0]) { const tg = document.createElement("span"); tg.className = "rtag"; tg.textContent = ROLES[o.role][0]; sp.append(tg, " "); }
+      par.forEach(o => { const un = document.createElement("span"), sp = document.createElement("span"), tg = document.createElement("button");
+        tg.type = "button"; tg.className = "rtag"; un.append(tg, sp); p.append(un);
+        const paint = () => { un.className = "unit r-" + o.role + (o.ess ? " ess" : "");
+          tg.hidden = !ROLES[o.role][0]; tg.textContent = ROLES[o.role][0] || "";
+          tg.title = (o.role === "ex" && o.why && o.why.length ? "Exemple trouvé grâce à : " + o.why.join(", ") + ". " : "") + "Touche pour dire si c'est un exemple ou non.";
+          tg.setAttribute("aria-label", (ROLES[o.role][0] || "") + ". Touche pour changer"); };
+        tg.addEventListener("click", () => {               // l'élève corrige : exemple ou pas
+          o.role = o.role === "ex" ? (o.base !== "ex" ? o.base : "info") : "ex"; o.ess = isEss(o, ana.cut); paint();
+          const it = picks.find(x => x.o === o); if (it && it.on !== o.ess) { it.on = o.ess; it.el.classList.toggle("on", it.on); countPicks(); }
+          const ne = ana.all.filter(x => x.ess).length; $("ana-n").textContent = `${ne} phrase${ne > 1 ? "s" : ""} essentielle${ne > 1 ? "s" : ""} sur ${ana.all.length}`; });
+        paint();
         o.text.split(/(\s+)/).forEach(w => { const c = clean(w);
           if (c.length >= 4 && !STOP.has(c) && ana.kwl.get(stem(norm(c))) === 3) { const b = document.createElement("b"); b.textContent = w; sp.append(b); } else sp.append(w); });
         sp.append(" ");
@@ -918,7 +975,7 @@ function renderAna() {
           sp.classList.add("sent"); sp.tabIndex = 0; sp.setAttribute("role", "button");
           const tog = () => { item.on = !item.on; sp.classList.toggle("on", item.on); countPicks(); };
           sp.addEventListener("click", tog); sp.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tog(); } }); }
-        p.append(sp); });
+      });
       box.append(p); });
   });
   const plan = ana.secs.map((s, i) => [s, i]).filter(([s]) => s.title);
