@@ -83,6 +83,18 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 .sent{cursor:pointer;border-radius:6px;padding:2px 1px}
 .sent:hover{background:var(--side)}
 .sent.on{background:var(--hl);color:#1E1A10}
+.reader h3.rt,.reader h4.rt{margin:8px 0 0;font-family:var(--f-title);color:var(--ink)} .reader h4.rt{font-size:17px}
+.rtag{display:inline-block;font-size:13px;font-weight:700;padding:1px 9px;border-radius:999px;background:var(--side);color:var(--ink-d);margin-right:2px;vertical-align:1px}
+.sent.r-ex{color:var(--muted)} .sent.r-ex .rtag{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.sent.r-def .rtag,.sent.r-ret .rtag,.sent.r-q .rtag{background:var(--tint)}
+.reader[data-view=ess] .sent:not(.ess),.reader[data-view=ess] .rpar:not(:has(.ess)){display:none}
+.ana{display:flex;flex-direction:column;gap:10px}
+.ana details{border:1px solid var(--line);border-radius:16px;padding:10px 14px}
+.ana summary{cursor:pointer;min-height:30px;display:flex;align-items:center;gap:8px}
+.ana ol,.ana ul{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+.kwrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.kwrow .lab{font-size:14px;color:var(--muted);min-width:120px}
+.kw3{background:var(--ink);color:#FFFFFF} .kw2{background:var(--tint);color:var(--ink-d)} .kw1{background:var(--side);color:var(--muted);font-weight:400}
 .editor{font-size:var(--size);line-height:2.1;padding:16px;border:1px dashed var(--line);border-radius:16px}
 .w{cursor:pointer;border-radius:6px;padding:2px 2px}
 .w:hover{background:var(--side)}
@@ -445,9 +457,15 @@ button.primary:hover{filter:brightness(1.08)}
       <div class="row"><button class="primary" id="imp-read">Lire le cours</button></div>
     </div>
     <div class="card" id="pick-card" hidden>
-      <h2>Surligne ce que tu veux apprendre</h2>
-      <p class="muted">Touche une phrase pour la surligner en jaune. Chaque phrase surlignée devient une notion. Les définitions sont déjà proposées.</p>
-      <div class="tools"><button id="pick-auto">Proposer les définitions</button><button id="pick-none">Tout enlever</button><span class="muted" id="pick-n"></span></div>
+      <h2>Comprendre le cours</h2>
+      <p class="muted">Notéa a découpé ton cours : le plan, les mots clés rangés par importance, et le rôle de chaque phrase (définition, exemple, règle…). Les phrases essentielles sont déjà surlignées en jaune. Touche une phrase pour la surligner ou l'enlever.</p>
+      <div class="ana" id="ana">
+        <div class="tools" role="group" aria-label="Ce qu'on montre"><button id="v-tout" aria-pressed="true">Tout le cours</button><button id="v-ess" aria-pressed="false">Seulement l'essentiel</button><span class="muted" id="ana-n"></span></div>
+        <details id="ana-plan-d"><summary><b>Le plan</b><span class="muted" id="ana-plan-n"></span></summary><ol id="ana-plan"></ol></details>
+        <details open><summary><b>Les mots clés</b></summary><div id="ana-kw"></div></details>
+        <details id="ana-q-d"><summary><b>À quoi répondre</b><span class="muted" id="ana-q-n"></span></summary><ul id="ana-q"></ul></details>
+      </div>
+      <div class="tools"><button id="pick-auto">Proposer l'essentiel</button><button id="pick-none">Tout enlever</button><span class="muted" id="pick-n"></span></div>
       <div class="reader" id="reader"></div>
       <div class="row"><button class="primary" id="pick-go">Créer les notions</button><button id="pick-x">Annuler</button></div>
     </div>
@@ -502,22 +520,26 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const tokens = text => text.split(/(\s+)/);                  // mots et espaces, dans l'ordre
 const clean = w => w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").replace(/^(l|d|qu|n|s|c|j)['’]/, "");
 const VERBS = new Set(["est", "sont", "désigne", "désignent", "signifie", "correspond", "consiste", "représente", "définit"]);
-function autoHoles(text) {
+function autoHoles(text, kwl) {
   const t = tokens(text), cand = [];
   const v = t.findIndex((w, i) => i > 0 && i < 20 && VERBS.has(clean(w)));
   if (v > 0) {                                     // « L'usus est le droit… » : on cache « usus »
     const term = []; for (let i = 0; i < v; i++) { const c = clean(t[i]); if (c.length >= 3 && !STOP.has(c)) term.push(i); }
     if (term.length >= 1 && term.length <= 3) return term;
   }
-  t.forEach((w, i) => { const c = clean(w); if (i > 0 && c.length >= 5 && !STOP.has(c)) cand.push([c.length, i]); });
+  t.forEach((w, i) => { const c = clean(w); if (c.length < 4 || STOP.has(c)) return;
+    const lv = kwl ? (kwl.get(stem(norm(c))) || 0) : 0;        // un mot clé important du cours passe en premier
+    if (i > 0 && c.length >= 5 || lv >= 1) cand.push([lv * 100 + c.length, i]); });
   cand.sort((a, b) => b[0] - a[0]);
   const n = text.split(/\s+/).length > 14 ? 2 : 1;
   return cand.slice(0, n).map(x => x[1]).sort((a, b) => a - b);
 }
 const START_D = {imp: 5, dif: 6.5, q: 6.5, rate: 7, manuel: 5};
-function makeNotion(text, mark, src) {
-  return {id: uid(), text: text.trim(), holes: autoHoles(text), mark: mark || "manuel", src: src || "", D: START_D[mark] || 5,
+function makeNotion(text, mark, src, kwl, role) {
+  const n = {id: uid(), text: text.trim(), holes: autoHoles(text, kwl), mark: mark || "manuel", src: src || "", D: START_D[mark] || 5,
     S: 0, due: 0, last: 0, reps: 0, lapses: 0, created: Date.now()};
+  if (role && role !== "info") n.role = role;
+  return n;
 }
 
 /* ---------- L'algorithme (inspiré de FSRS, l'algorithme d'Anki) ----------
@@ -817,36 +839,121 @@ function splitSentences(text) {
   return text.split(/\n\s*\n|\n(?=[-•*\d]+[.)]?\s)/).map(p => p.replace(/\s*\n\s*/g, " ").trim()).filter(Boolean)
     .map(p => (p.match(/[^.!?…]+(?:[.!?…]+|$)/g) || [p]).map(x => x.trim()).filter(Boolean));
 }
+/* ---------- Comprendre le cours : l'algorithme de déstructuration ----------
+   1. Découper : les titres (le plan), les paragraphes, les phrases.
+   2. Donner un rôle à chaque phrase : définition, exemple, règle, formule, date, cause, question.
+   3. Noter chaque mot clé : il gagne des points s'il revient souvent, s'il est dans un titre,
+      s'il est le mot défini, ou dans une phrase « à retenir ». Un mot vu seulement dans les exemples perd des points.
+      On range en 3 niveaux : très important, important, détail.
+   4. L'essentiel = les définitions, règles, formules, phrases à retenir, et les phrases riches en mots clés.
+      Les exemples aident à comprendre, mais ne sont pas à apprendre par cœur. */
+const ROLES = {q: ["À quoi répondre", 3], ret: ["À retenir", 3], def: ["Définition", 3], form: ["Formule", 2.5], regle: ["Règle", 2.5],
+  date: ["Date", 2], cause: ["Cause et conséquence", 2], ex: ["Exemple", 0.5], info: ["", 1]};
+const KSTOP = new Set("peut peuvent doit doivent faut entre après avant cette celui celle ceux ainsi alors deux trois quatre cinq premier première second seconde exemple exemples définition retenir expliquez expliquer citez citer montrez justifiez décrivez comparez également autre autres chaque certain certains certaines plusieurs selon garde gardent avoir notamment manière moins quand lorsque leurs elle elles dont même mêmes toute toutes donne donnent permet".split(" "));
+const R_Q = /\?\s*$|^(expliqu|définisse|définir|citez|citer|compare|montrez|justifie|analyse|décrive|calcule|démontre|résume)/i;
+const R_RET = /^(à retenir|retenir|important|attention|essentiel|à savoir|notez)\b|\b(à retenir|retenez|il faut retenir)\b/i;
+const R_EX0 = /^(par exemple|exemple|ex\s*[:.]|imaginons|prenons|cas pratique|illustration)/i;
+const R_EX = /\b(par exemple|exemple\s*:|notamment|tels? que|telles? que|c'est le cas)/i;
+const R_DEF = /\b(on appelle|se définit|désignent?|signifie|correspond à|consiste à|représente|c'est-à-dire|définition)\b|^[^,]{2,50}\s(est|sont)\s(un|une|le|la|les|l['’]|des|ce|celui|celle)\b|^[^:]{2,50}\s?:\s/i;
+const R_FORM = /[=≈≤≥±√∑∫]|\d\s*[×x*/+−-]\s*\d|\b(formule|égale? à)\b/i;
+const R_REGLE = /\b(doit|doivent|il faut|interdit|obligatoire|obligation|principe|règle|article\s+\d|loi|en vertu|toujours|jamais|ne peut pas|est tenu)\b/i;
+const R_DATE = /\b(1[0-9]{3}|20[0-9]{2})\b|\bsiècle\b/;
+const R_CAUSE = /\b(parce qu|car|donc|c'est pourquoi|entraîne|provoque|cause|conséquence|en raison|grâce à|permet(tent)? de|afin de|résulte)\b/i;
+function roleOf(s) {
+  if (R_Q.test(s)) return "q"; if (R_RET.test(s)) return "ret"; if (R_EX0.test(s)) return "ex";
+  if (R_DEF.test(s)) return "def"; if (R_FORM.test(s)) return "form"; if (R_EX.test(s)) return "ex";
+  if (R_REGLE.test(s)) return "regle"; if (R_DATE.test(s)) return "date"; if (R_CAUSE.test(s)) return "cause"; return "info";
+}
+function isTitle(line) {
+  const l = line.trim(), w = l.split(/\s+/).length;
+  if (l.length < 3 || w > 12 || /^[-•*–]/.test(l)) return 0;
+  if (/^(chapitre|partie|section|titre|leçon|thème|séquence)\b/i.test(l) || /^[IVX]+\s?[.)\-–]\s/.test(l)) return 1;
+  if (/^(\d+(\.\d+)*|[A-H])\s?[.)\-–]\s/.test(l) && !/[.!?;]$/.test(l) && w <= 10) return 2;
+  if (w <= 8 && !/[.!?;,:]$/.test(l) && /^\p{Lu}/u.test(l) && !/\s:\s/.test(l)) return l === l.toUpperCase() && /\p{L}{3}/u.test(l) ? 1 : 2;
+  return 0;
+}
+function analyse(text) {
+  const secs = [{title: "", level: 0, blocks: []}]; let buf = [];
+  const flush = () => { if (buf.length) { secs[secs.length - 1].blocks.push(buf.join("\n")); buf = []; } };
+  text.replace(/\r/g, "").split("\n").forEach(l => { const lv = isTitle(l);
+    if (lv) { flush(); secs.push({title: l.trim().replace(/[\s:]+$/, ""), level: lv, blocks: []}); } else if (!l.trim()) flush(); else buf.push(l); });
+  flush();
+  const all = [];
+  secs.forEach((s, si) => { s.blocks = s.blocks.flatMap(b => splitSentences(b)).map(par => par.map(t => { const o = {text: t, role: roleOf(t), sec: si}; all.push(o); return o; })); });
+  const kw = new Map();
+  const add = (w, bonus, ex) => { const c = clean(w); if (c.length < 4 || STOP.has(c) || KSTOP.has(c) || /^\d+$/.test(c)) return;
+    const k = stem(norm(c)); let o = kw.get(k); if (!o) kw.set(k, o = {forms: new Map(), score: 0, ex: 0, other: 0});
+    const f = core(w); o.forms.set(f, (o.forms.get(f) || 0) + 1); o.score += 1 + bonus; ex ? o.ex++ : o.other++; };
+  secs.forEach(s => s.title && s.title.split(/\s+/).forEach(w => add(w, 3)));
+  all.forEach(o => { const t = o.text.split(/\s+/);
+    const v = o.role === "def" ? t.findIndex((w, i) => i > 0 && i < 8 && (VERBS.has(clean(w)) || w === ":")) : -1;
+    t.forEach((w, i) => add(w, (i < v ? 4 : 0) + (o.role === "ret" || o.role === "q" ? 1.5 : 0) + (i > 0 && /^\p{Lu}\p{Ll}/u.test(w) ? 0.5 : 0), o.role === "ex")); });
+  const list = [...kw.entries()].map(([k, o]) => ({k, score: o.other ? o.score : o.score * 0.4,
+    label: [...o.forms.entries()].sort((a, b) => b[1] - a[1])[0][0]})).filter(x => x.score >= 2).sort((a, b) => b.score - a.score);
+  const n3 = Math.max(3, Math.round(list.length * 0.12)), n2 = n3 + Math.round(list.length * 0.25), kwl = new Map();
+  list.forEach((x, i) => { x.lv = i < n3 ? 3 : i < n2 ? 2 : 1; kwl.set(x.k, x.lv); });
+  all.forEach(o => { const seen = new Set(); let sum = 0;
+    o.text.split(/\s+/).forEach(w => { const k = stem(norm(clean(w))); if (kwl.has(k) && !seen.has(k)) { seen.add(k); sum += kwl.get(k); } });
+    o.score = ROLES[o.role][1] + Math.min(3, sum / 3); });
+  const sc = all.filter(o => o.role !== "ex").map(o => o.score).sort((a, b) => b - a), cut = sc[Math.floor(sc.length * 0.4)] || 0;
+  all.forEach(o => { o.ess = o.role !== "ex" && (["def", "ret", "q", "form", "regle"].includes(o.role) || o.score >= cut); });
+  const qs = all.filter(o => o.role === "q").map(o => o.text);           // les questions du cours
+  all.filter(o => o.role === "def").forEach(o => { const t = o.text.split(/\s+/), v = t.findIndex((w, i) => i > 0 && i < 8 && VERBS.has(clean(w)));
+    if (v > 0 && v <= 4) qs.push("Qu'est-ce que « " + t.slice(0, v).join(" ").replace(/^(l['’]|le |la |les |un |une )/i, "") + " » ?"); });
+  return {secs, all, list, kwl, qs};
+}
+let ana = null;
+function renderAna() {
+  const box = $("reader"); box.replaceChildren(); picks = [];
+  ana.secs.forEach((s, si) => {
+    if (s.title) { const h = document.createElement(s.level === 1 ? "h3" : "h4"); h.className = "rt"; h.id = "sec-" + si; h.textContent = s.title; box.append(h); }
+    s.blocks.forEach(par => { const p = document.createElement("p"); p.className = "rpar"; p.style.margin = "0";
+      par.forEach(o => { const sp = document.createElement("span"); sp.className = "r-" + o.role + (o.ess ? " ess" : "");
+        if (ROLES[o.role][0]) { const tg = document.createElement("span"); tg.className = "rtag"; tg.textContent = ROLES[o.role][0]; sp.append(tg, " "); }
+        o.text.split(/(\s+)/).forEach(w => { const c = clean(w);
+          if (c.length >= 4 && !STOP.has(c) && ana.kwl.get(stem(norm(c))) === 3) { const b = document.createElement("b"); b.textContent = w; sp.append(b); } else sp.append(w); });
+        sp.append(" ");
+        const words = o.text.split(/\s+/).length;
+        if (words >= 4 && words <= 60) { const item = {text: o.text, el: sp, on: false, o}; picks.push(item);
+          sp.classList.add("sent"); sp.tabIndex = 0; sp.setAttribute("role", "button");
+          const tog = () => { item.on = !item.on; sp.classList.toggle("on", item.on); countPicks(); };
+          sp.addEventListener("click", tog); sp.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tog(); } }); }
+        p.append(sp); });
+      box.append(p); });
+  });
+  const plan = ana.secs.map((s, i) => [s, i]).filter(([s]) => s.title);
+  $("ana-plan").replaceChildren(...plan.map(([s, i]) => { const li = document.createElement("li"); if (s.level > 1) li.style.marginLeft = "18px";
+    const a = document.createElement("a"); a.href = "#sec-" + i; a.textContent = s.title;
+    a.addEventListener("click", e => { e.preventDefault(); $("sec-" + i).scrollIntoView({block: "start", behavior: "smooth"}); }); li.append(a); return li; }));
+  $("ana-plan-d").hidden = !plan.length; $("ana-plan-n").textContent = plan.length + " partie" + (plan.length > 1 ? "s" : "");
+  const lab = {3: "Très important", 2: "Important", 1: "Détail"};
+  $("ana-kw").replaceChildren(...[3, 2, 1].map(lv => { const row = document.createElement("div"); row.className = "kwrow";
+    const items = ana.list.filter(x => x.lv === lv).slice(0, lv === 1 ? 10 : 12); if (!items.length) return row;
+    const l = document.createElement("span"); l.className = "lab"; l.textContent = lab[lv]; row.append(l);
+    items.forEach(x => { const c = document.createElement("span"); c.className = "chip kw" + lv; c.textContent = x.label; row.append(c); }); return row; }));
+  $("ana-q").replaceChildren(...ana.qs.map(q => { const li = document.createElement("li"); li.textContent = q; return li; }));
+  $("ana-q-d").hidden = !ana.qs.length; $("ana-q-n").textContent = ana.qs.length + " question" + (ana.qs.length > 1 ? "s" : "");
+  const ne = ana.all.filter(o => o.ess).length; $("ana-n").textContent = `${ne} phrase${ne > 1 ? "s" : ""} essentielle${ne > 1 ? "s" : ""} sur ${ana.all.length}`;
+  setView("tout");
+}
+function setView(v) { $("reader").dataset.view = v; $("v-tout").setAttribute("aria-pressed", v === "tout"); $("v-ess").setAttribute("aria-pressed", v === "ess"); }
+$("v-tout").addEventListener("click", () => setView("tout"));
+$("v-ess").addEventListener("click", () => setView("ess"));
 $("imp-read").addEventListener("click", () => {
   const text = $("imp-text").value.trim();
   if (text.split(/\s+/).length < 5) { note("Colle un cours ou choisis un fichier d'abord.", "warn"); return; }
-  picks = []; const box = $("reader"); box.replaceChildren();
-  splitSentences(text).forEach(par => {
-    const p = document.createElement("p");
-    par.forEach(sen => {
-      const words = sen.split(/\s+/).length;
-      const s = document.createElement("span"); s.textContent = sen + " ";
-      if (words >= 4 && words <= 60) {
-        const item = {text: sen, el: s, on: false}; picks.push(item);
-        s.className = "sent"; s.tabIndex = 0; s.setAttribute("role", "button");
-        const tog = () => { item.on = !item.on; s.classList.toggle("on", item.on); countPicks(); };
-        s.addEventListener("click", tog); s.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tog(); } });
-      }
-      p.append(s);
-    });
-    box.append(p);
-  });
+  ana = analyse(text); renderAna();
   autoPick(); $("pick-card").hidden = false; $("pick-card").scrollIntoView({block: "start", behavior: "smooth"});
 });
 function countPicks() { const n = picks.filter(x => x.on).length; $("pick-n").textContent = `${n} phrase${n > 1 ? "s" : ""} surlignée${n > 1 ? "s" : ""}`; $("pick-go").textContent = n ? `Créer ${n} notion${n > 1 ? "s" : ""}` : "Créer les notions"; }
-function autoPick() { picks.forEach(x => { const w = x.text.split(/\s+/).length; x.on = DEF.test(x.text) && w <= 40; x.el.classList.toggle("on", x.on); }); countPicks(); }
+function autoPick() { picks.forEach(x => { const w = x.text.split(/\s+/).length; x.on = (x.o ? x.o.ess : DEF.test(x.text)) && w <= 40; x.el.classList.toggle("on", x.on); }); countPicks(); }
 $("pick-auto").addEventListener("click", autoPick);
 $("pick-none").addEventListener("click", () => { picks.forEach(x => { x.on = false; x.el.classList.remove("on"); }); countPicks(); });
 $("pick-x").addEventListener("click", () => { $("pick-card").hidden = true; });
 $("pick-go").addEventListener("click", () => {
   const chosen = picks.filter(x => x.on); if (!chosen.length) { note("Surligne au moins une phrase.", "warn"); return; }
   const have = new Set(db.notions.map(n => n.text)); const src = ($("imp-mat").value.trim() || "Cours importé") + " · " + new Date().toLocaleDateString("fr-FR");
-  let added = 0; chosen.forEach(x => { if (have.has(x.text)) return; db.notions.push(makeNotion(x.text, "imp", src)); have.add(x.text); added++; });
+  let added = 0; chosen.forEach(x => { if (have.has(x.text)) return; db.notions.push(makeNotion(x.text, "imp", src, ana && ana.kwl, x.o && x.o.role)); have.add(x.text); added++; });
   save(); useTool("notions"); renderList(); renderToday(); $("pick-card").hidden = true; $("imp-text").value = "";
   note(`${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}. Elles sont dans ta révision du jour.`, "ok");
 });
