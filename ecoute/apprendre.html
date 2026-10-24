@@ -133,6 +133,11 @@ kbd{font:700 13px/1 var(--f-body);border:1px solid currentColor;border-radius:6p
 .plume{height:32px;padding:0 10px;border-radius:999px;background:#FFF3C4;color:#5C4300;font-weight:700;font-size:14px;display:inline-flex;align-items:center}
 body{letter-spacing:var(--ls,0);word-spacing:var(--ws,0)}
 /* Quiz et jeux */
+.w.speak,.hole.speak{background:var(--hl);color:#1E1A10;border-radius:4px;box-shadow:0 0 0 2px var(--hl)}
+.ruler{position:fixed;left:0;right:0;background:rgba(23,17,31,.5);pointer-events:none;z-index:60}
+.why{border-radius:14px;padding:12px 16px;background:var(--side);line-height:var(--lh);display:flex;flex-direction:column;gap:6px;font-size:calc(var(--size) - 4px)}
+.why.ok{background:var(--good-bg)} .why.no{background:var(--bad-bg)}
+button.mic.on{background:var(--bad-bg);border-color:var(--bad)}
 .choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .choices button{min-height:60px;font-size:19px;justify-content:flex-start;text-align:left;border-radius:18px;padding:10px 16px}
 .choices button.ok,.mcol button.ok{background:var(--good-bg);border-color:var(--good);color:var(--good)}
@@ -304,6 +309,7 @@ button.primary:hover{filter:brightness(1.08)}
         <div class="group"><span class="muted">Taille</span><button id="moins" aria-label="Texte plus petit">A−</button><button id="plus" aria-label="Texte plus grand">A+</button></div>
         <div class="group"><span class="muted">Interligne</span><span class="seg2"><button id="lh-n" class="on">Normal</button><button id="lh-l">Large</button><button id="lh-xl">Très large</button></span></div>
         <div class="group"><span class="muted">Espace entre les lettres</span><span class="seg2" id="esp"><button data-e="0" class="on">Normal</button><button data-e="1">Large</button><button data-e="2">Très large</button></span></div>
+        <div class="group"><span class="muted">Règle de lecture</span><span class="seg2" id="regle"><button data-r="0" class="on">Non</button><button data-r="1">Oui</button></span></div>
         <div class="group"><span class="muted">Voix</span><span class="seg2" id="voix"><button data-v="0.8">Lente</button><button data-v="1" class="on">Normale</button></span></div>
       </div>
     </div>
@@ -344,6 +350,7 @@ button.primary:hover{filter:brightness(1.08)}
       <div class="row" style="justify-content:space-between"><span class="muted" id="qz-pos"></span><span class="muted" id="qz-score"></span></div>
       <p class="qtext" id="qz-q"></p>
       <div class="choices" id="qz-c"></div>
+      <div class="why" id="qz-why" hidden aria-live="polite"></div>
       <div class="row" id="qz-type" hidden><input type="text" id="qz-in" placeholder="Écris la réponse" style="flex:1 1 240px;font-size:19px" autocomplete="off"><button class="primary" id="qz-ok">Vérifier</button></div>
       <div class="row"><button id="qz-lire">🔊 Écouter</button><button class="primary" id="qz-next" hidden>Suivante</button></div>
     </div>
@@ -405,7 +412,8 @@ button.primary:hover{filter:brightness(1.08)}
     <div class="card">
       <h2>Ma carte mentale</h2>
       <p class="muted">Écris tes idées avec tes mots, une par ligne. Mets 2 espaces (ou un tiret) devant une ligne pour l'accrocher à l'idée du dessus. La carte se dessine toute seule.</p>
-      <div class="row"><label for="cm-mat"><b>Matière</b></label><select id="cm-mat" style="flex:1 1 200px"></select><span class="seg2 niv" aria-label="Difficulté"><button data-n="1">Facile</button><button data-n="2" class="on">Moyen</button><button data-n="3">Difficile</button></span><button id="cm-notions">Partir de mes notions</button><button id="cm-check">Vérifier ma carte</button><button id="cm-print">Imprimer</button></div>
+      <div class="row"><span class="seg2" id="cm-mode" aria-label="Façon de faire la carte"><button data-c="mem" class="on">De mémoire (conseillé)</button><button data-c="aide">Avec mes notions</button></span></div>
+      <div class="row"><label for="cm-mat"><b>Matière</b></label><select id="cm-mat" style="flex:1 1 200px"></select><span class="seg2 niv" aria-label="Difficulté"><button data-n="1">Facile</button><button data-n="2" class="on">Moyen</button><button data-n="3">Difficile</button></span><button id="cm-notions">Partir de mes notions</button><button id="cm-check">Vérifier ma carte</button><button id="cm-print">Imprimer</button><span id="cm-check-row"></span></div>
       <p class="muted" id="cm-help">Moyen : seulement les grandes idées. À toi d'écrire les détails.</p>
       <div class="cm-wrap"><textarea id="cm-text" spellcheck="false" placeholder="Droit de propriété&#10;  usus : utiliser&#10;  fructus : les fruits&#10;  abusus : vendre ou détruire"></textarea><div id="cm-svg" class="cm-svg"></div></div>
       <div id="cm-res" hidden style="display:flex;flex-direction:column;gap:8px"></div>
@@ -504,6 +512,7 @@ button.primary:hover{filter:brightness(1.08)}
   <div id="sheet"></div>
 </div>
 
+<div class="ruler" id="ruler-t" hidden></div><div class="ruler" id="ruler-b" hidden></div>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
@@ -1010,7 +1019,9 @@ $("pick-x").addEventListener("click", () => { $("pick-card").hidden = true; });
 $("pick-go").addEventListener("click", () => {
   const chosen = picks.filter(x => x.on); if (!chosen.length) { note("Surligne au moins une phrase.", "warn"); return; }
   const have = new Set(db.notions.map(n => n.text)); const src = ($("imp-mat").value.trim() || "Cours importé") + " · " + new Date().toLocaleDateString("fr-FR");
-  let added = 0; chosen.forEach(x => { if (have.has(x.text)) return; db.notions.push(makeNotion(x.text, "imp", src, ana && ana.kwl, x.o && x.o.role)); have.add(x.text); added++; });
+  const exOf = o => { if (!ana || !o) return ""; for (let k = o.idx + 1; k < ana.all.length && k <= o.idx + 3; k++) { const z = ana.all[k]; if (z.sec !== o.sec) break; if (z.role === "ex") return z.text; if (z.ess) break; } return ""; };
+  let added = 0; chosen.forEach(x => { if (have.has(x.text)) return; const nn = makeNotion(x.text, "imp", src, ana && ana.kwl, x.o && x.o.role);
+    const e = exOf(x.o); if (e) nn.ex = e; db.notions.push(nn); have.add(x.text); added++; });
   save(); useTool("notions"); renderList(); renderToday(); $("pick-card").hidden = true; $("imp-text").value = "";
   note(`${added} notion${added > 1 ? "s" : ""} ajoutée${added > 1 ? "s" : ""}. Elles sont dans ta révision du jour.`, "ok");
 });
@@ -1255,8 +1266,37 @@ function speak(text) {
   if (!("speechSynthesis" in window)) { note("La lecture à voix haute n'existe pas sur ce navigateur.", "warn"); return; }
   speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "fr-FR"; u.rate = rate; speechSynthesis.speak(u);
 }
+/* Le mot lu s'allume : on découpe le texte en mots, et la voix dit où elle en est (événement « boundary »).
+   Si la voix ne le dit pas, on avance au rythme moyen de la lecture. Un mot caché est lu « blanc ». */
+let kara = null;
+function speakEl(el) {
+  if (!("speechSynthesis" in window)) { note("La lecture à voix haute n'existe pas sur ce navigateur.", "warn"); return; }
+  if (kara) kara.stop(); speechSynthesis.cancel();
+  const parts = []; let said = "";
+  const walk = node => [...node.childNodes].forEach(c => {
+    if (c.nodeType === 3) { const fr = document.createDocumentFragment();
+      c.textContent.split(/(\s+)/).forEach(w => { if (!w) return; if (/^\s+$/.test(w)) { fr.append(w); said += " "; return; }
+        const sp = document.createElement("span"); sp.className = "w"; sp.textContent = w; fr.append(sp);
+        parts.push({s: said.length, e: said.length + w.length, el: sp, len: w.length}); said += w; });
+      c.replaceWith(fr);
+    } else if (c.nodeType === 1) {
+      if (c.classList.contains("hole")) { said += " "; parts.push({s: said.length, e: said.length + 5, el: c, len: 5}); said += "blanc "; }
+      else if (c.classList.contains("w")) { parts.push({s: said.length, e: said.length + c.textContent.length, el: c, len: c.textContent.length}); said += c.textContent; }
+      else walk(c);
+    } });
+  walk(el); if (!parts.length) return;
+  let cur = -1, gotB = false, tm = null;
+  const light = k => { if (k === cur || k < 0 || k >= parts.length) return; if (cur >= 0) parts[cur].el.classList.remove("speak"); cur = k; parts[k].el.classList.add("speak"); };
+  const tick = k => { if (gotB || k >= parts.length) return; light(k); tm = setTimeout(() => tick(k + 1), (90 + 62 * parts[k].len) / rate); };
+  const u = new SpeechSynthesisUtterance(said); u.lang = "fr-FR"; u.rate = rate;
+  u.onboundary = e => { if (e.name && e.name !== "word") return; gotB = true; clearTimeout(tm); const k = parts.findIndex(x => e.charIndex < x.e); light(k < 0 ? parts.length - 1 : k); };
+  u.onstart = () => tick(0);
+  const end = () => { clearTimeout(tm); if (cur >= 0 && parts[cur]) parts[cur].el.classList.remove("speak"); cur = -1; kara = null; };
+  u.onend = end; u.onerror = end; kara = {stop: end};
+  speechSynthesis.speak(u);
+}
 const sayNotion = (n, show) => { const t = tokens(n.text), h = new Set(n.holes); return t.map((w, i) => h.has(i) && !show ? " blanc " : w).join(""); };
-$("lire").addEventListener("click", () => { const n = queue[idx]; if (n) speak(sayNotion(n, shown)); });
+$("lire").addEventListener("click", () => { if (queue[idx]) speakEl($("q-text")); });
 document.querySelectorAll("#voix button").forEach(b => { b.classList.toggle("on", Number(b.dataset.v) === rate);
   b.addEventListener("click", () => { rate = Number(b.dataset.v); try { localStorage.setItem("alto-voix", rate); } catch (e) {} document.querySelectorAll("#voix button").forEach(x => x.classList.toggle("on", x === b)); speak("Voici la voix de lecture."); }); });
 
@@ -1275,42 +1315,104 @@ const answerOf = n => holeWords(n).join(" ");
 function fillMats(sel) { const cur = sel.value; sel.replaceChildren(); const all = document.createElement("option"); all.value = ""; all.textContent = "Toutes les matières"; sel.append(all);
   matsWithNotions().forEach(m => { const o = document.createElement("option"); o.value = o.textContent = m; sel.append(o); }); if ([...sel.options].some(o => o.value === cur)) sel.value = cur; }
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-function distractors(n, k = 3) {
+function distractorsN(n, k = 3) {
   const ans = norm(answerOf(n)), L = ans.length, seen = new Set([ans]);
-  return db.notions.filter(x => x !== n && answerOf(x)).map(x => ({a: answerOf(x), same: matOf(x) === matOf(n)}))
+  return db.notions.filter(x => x !== n && answerOf(x)).map(x => ({a: answerOf(x), n: x, same: matOf(x) === matOf(n)}))
     .filter(x => { const k2 = norm(x.a); if (seen.has(k2)) return false; seen.add(k2); return true; })
     .sort((x, y) => (y.same - x.same) || Math.abs(x.a.length - L) - Math.abs(y.a.length - L) || Math.random() - .5)
-    .slice(0, k).map(x => x.a);
+    .slice(0, k);
 }
-let qz = {list: [], i: 0, ok: 0, done: false};
-function pool() { const m = $("jx-mat").value; return db.notions.filter(n => n.holes.length && answerOf(n) && (!m || matOf(n) === m)); }
+const distractors = (n, k = 3) => distractorsN(n, k).map(x => x.a);
+/* Questions variées, sans IA. Elles viennent de la forme de la phrase :
+   « X est … » → « Qu'est-ce que X ? » ; une phrase vraie ou rendue fausse (on échange le mot clé avec celui d'une autre notion) → « Vrai ou faux ? » ;
+   un exemple trouvé dans le cours → « Quel exemple va avec X ? ». */
+function defParts(n) {
+  const t = n.text.trim().split(/\s+/), v = t.findIndex((w, i) => i > 0 && i < 6 && VERBS.has(clean(w)));
+  if (v < 1) return null;
+  const term = t.slice(0, v).join(" ").replace(/^(l['’]|le |la |les |un |une )/i, ""), def = t.slice(v + 1).join(" ").replace(/[.;:!]+$/, "");
+  if (term.split(/\s+/).length > 4 || def.split(/\s+/).length < 3) return null;
+  return {term, def};
+}
+const defOf = x => { const d = defParts(x); return d ? d.def : ""; };
+const termOf = x => { const d = defParts(x); return d ? d.term : answerOf(x); };
+function othersBy(n, f, k) {
+  const seen = new Set([norm(f(n))]);
+  return shuffle(db.notions.filter(x => x !== n && f(x))).map(x => ({a: f(x), n: x, same: matOf(x) === matOf(n)}))
+    .filter(x => { const kk = norm(x.a); if (seen.has(kk)) return false; seen.add(kk); return true; })
+    .sort((x, y) => y.same - x.same).slice(0, k);
+}
+const RXW = /^([^\p{L}\p{N}]*(?:(?:[lLdDjJnNsScCmMtT]|[qQ]u)['’])?)(.*?)([^\p{L}\p{N}]*)$/u;
+function swapHoles(n, rep) { const t = tokens(n.text), h = [...n.holes].sort((a, b) => a - b);
+  return t.map((w, i) => { if (!h.includes(i)) return w; if (i !== h[0]) return ""; const m = w.match(RXW) || ["", "", w, ""]; return m[1] + rep + m[3]; }).join("").replace(/\s{2,}/g, " "); }
+function qTypes(n) {
+  const ty = [], hard = db.niv === 3, need = db.niv === 1 ? 1 : 2;
+  if (n.holes.length && answerOf(n)) ty.push("trou");
+  if (defOf(n) && (hard || othersBy(n, defOf, need).length >= need)) ty.push("def");
+  if (!hard && n.holes.length && answerOf(n) && distractorsN(n, 1).length) ty.push("vf");
+  if (!hard && n.ex && othersBy(n, x => x.ex, 1).length) ty.push("ex");
+  return ty;
+}
+let qz = {list: [], i: 0, ok: 0, last: "", cur: null};
+function pool() { const m = $("jx-mat").value; return db.notions.filter(n => (!m || matOf(n) === m) && qTypes(n).length); }
 function quizStart() {
   const now = Date.now(), p = pool().sort((a, b) => ((a.last ? a.due : 0) <= now ? 0 : 1) - ((b.last ? b.due : 0) <= now ? 0 : 1) || Math.random() - .5);
   if (db.notions.filter(n => answerOf(n)).length < 4) { note("Il faut au moins 4 notions pour un quiz.", "warn"); return; }
-  qz = {list: p.slice(0, 10), i: 0, ok: 0}; $("jx-end").hidden = true; $("mt").hidden = true; $("qz").hidden = false; quizShow();
+  qz = {list: p.slice(0, 10), i: 0, ok: 0, last: "", cur: null}; $("jx-end").hidden = true; $("mt").hidden = true; $("qz").hidden = false; quizShow();
 }
 function quizShow() {
-  const n = qz.list[qz.i]; $("qz-pos").textContent = `Question ${qz.i + 1} sur ${qz.list.length}`; $("qz-score").textContent = `${qz.ok} juste${qz.ok > 1 ? "s" : ""}`;
-  $("qz-q").replaceChildren(holeHTML(n, false)); $("qz-next").hidden = true;
-  const box = $("qz-c"); box.replaceChildren();
-  $("qz-type").hidden = db.niv !== 3; box.hidden = db.niv === 3;
-  if (db.niv === 3) { $("qz-in").value = ""; $("qz-in").disabled = false; $("qz-in").focus(); return; }
-  shuffle([answerOf(n), ...distractors(n, db.niv === 1 ? 1 : 3)]).forEach(a => { const b = document.createElement("button"); b.textContent = a; b.addEventListener("click", () => quizAnswer(b, a === answerOf(n))); box.append(b); });
+  const n = qz.list[qz.i], ty = qTypes(n); let t = ty[Math.floor(Math.random() * ty.length)];
+  if (ty.length > 1 && t === qz.last) t = ty.find(x => x !== qz.last);          // on change de forme d'une question à l'autre
+  qz.last = t; qz.cur = {t, n};
+  $("qz-pos").textContent = `Question ${qz.i + 1} sur ${qz.list.length}`; $("qz-score").textContent = `${qz.ok} juste${qz.ok > 1 ? "s" : ""}`;
+  $("qz-next").hidden = true; $("qz-why").hidden = true;
+  const q = $("qz-q"), box = $("qz-c"); q.replaceChildren(); box.replaceChildren();
+  const typed = db.niv === 3 && (t === "trou" || t === "def"); $("qz-type").hidden = !typed; box.hidden = typed;
+  const k = db.niv === 1 ? 1 : 3, tag = txt => { const c = document.createElement("span"); c.className = "chip"; c.textContent = txt; return c; };
+  let good = "", opts = [];
+  if (t === "trou") { q.append(holeHTML(n, false)); good = answerOf(n); opts = distractorsN(n, k); }
+  else if (t === "def") { q.append(tag("Définition"), " Qu'est-ce que « " + termOf(n) + " » ?"); good = defOf(n); opts = othersBy(n, defOf, k); }
+  else if (t === "ex") { q.append(tag("Exemple"), " Quel exemple va avec « " + termOf(n) + " » ?"); good = n.ex; opts = othersBy(n, x => x.ex, k); }
+  else {
+    const d = distractorsN(n, 1)[0], vrai = Math.random() < .5 || !d;
+    q.append(tag("Vrai ou faux ?"), " ", vrai ? n.text : swapHoles(n, d.a));
+    qz.cur.good = vrai ? "Vrai" : "Faux"; qz.cur.other = vrai ? null : d.n;
+    ["Vrai", "Faux"].forEach(a => { const b = document.createElement("button"); b.textContent = a; b.addEventListener("click", () => quizAnswer(b, a === qz.cur.good, a === "Vrai" ? qz.cur.other : null)); box.append(b); });
+    return;
+  }
+  qz.cur.good = good;
+  if (typed) { $("qz-in").value = ""; $("qz-in").disabled = false; $("qz-in").placeholder = t === "def" ? "Explique avec tes mots" : "Écris la réponse"; $("qz-in").focus(); return; }
+  shuffle([{a: good, n: null}, ...opts]).forEach(o => { const b = document.createElement("button"); b.textContent = o.a; b.addEventListener("click", () => quizAnswer(b, o.a === good, o.n)); box.append(b); });
 }
-function quizAnswer(btn, good) {
-  if (!$("qz-next").hidden) return; const n = qz.list[qz.i], now = Date.now();
-  [...$("qz-c").children].forEach(b => { if (b.textContent === answerOf(n)) b.classList.add("ok"); });
-  if (btn) { if (!good) btn.classList.add("no"); } else { $("qz-in").disabled = true; note(good ? "Juste !" : "La réponse était : " + answerOf(n), good ? "ok" : "warn"); }
+/* Expliquer l'erreur : on montre la phrase du cours. Si la réponse choisie appartient à une autre notion, on montre laquelle :
+   c'est souvent là qu'est la confusion. */
+function showWhy(n, good, other, typedAnswer) {
+  const w = $("qz-why"); w.replaceChildren(); w.className = "why " + (good ? "ok" : "no");
+  const h = document.createElement("b"); h.textContent = good ? "Juste ! Dans ton cours :" : "Pas tout à fait. Dans ton cours :"; w.append(h);
+  const p = document.createElement("div"); p.append(holeHTML(n, true)); w.append(p);
+  if (!good && typedAnswer) { const e = document.createElement("div"); e.textContent = "Réponse attendue : « " + typedAnswer + " »."; w.append(e); }
+  if (!good && other) { const o = document.createElement("div"); o.className = "muted"; o.textContent = "Ce que tu as choisi vient d'une autre notion : « " + other.text + " »"; w.append(o); }
+  if (n.ex && qz.cur.t !== "ex") { const e = document.createElement("div"); e.className = "muted"; e.textContent = "Exemple : " + n.ex; w.append(e); }
+  const sr = document.createElement("div"); sr.className = "src"; sr.append(srcHTML(n)); w.append(sr);
+  w.hidden = false;
+}
+function quizAnswer(btn, good, other) {
+  if (!$("qz-next").hidden) return; const c = qz.cur, n = c.n, now = Date.now();
+  [...$("qz-c").children].forEach(b => { if (b.textContent === c.good) b.classList.add("ok"); });
+  if (btn) { if (!good) btn.classList.add("no"); } else $("qz-in").disabled = true;
   if (good) qz.ok++;
-  $("qz-q").replaceChildren(holeHTML(n, true));
+  if (c.t === "trou") $("qz-q").replaceChildren(holeHTML(n, true));
+  showWhy(n, good, other, btn ? "" : c.good);
   if (!n.last || n.due <= now) { if (!n.last) db.newToday++; schedule(n, good ? 2 : 1, now); save(); }
   if (onceToday("n" + n.id)) gainN(1, "quiz");
   $("qz-next").hidden = false; $("qz-next").textContent = qz.i + 1 < qz.list.length ? "Suivante" : "Voir le score"; $("qz-next").focus();
 }
 $("qz-next").addEventListener("click", () => { qz.i++; if (qz.i < qz.list.length) quizShow(); else jeuFin(`${qz.ok} sur ${qz.list.length}`, qz.ok === qz.list.length ? "Parfait !" : "Les notions ratées reviendront plus tôt dans ta révision."); });
-$("qz-ok").addEventListener("click", () => { const v = $("qz-in").value.trim(); if (!v) return; quizAnswer(null, found(new Set(wordsOf(v)), answerOf(qz.list[qz.i]))); });
+$("qz-ok").addEventListener("click", () => { const v = $("qz-in").value.trim(); if (!v) return; const c = qz.cur, said = new Set(wordsOf(v)); let good;
+  if (c.t === "def") { const need = [...new Set(c.good.split(/\s+/).map(clean).filter(w => w.length >= 4 && !STOP.has(w)))]; good = need.length ? need.filter(w => found(said, w)).length / need.length >= 0.5 : found(said, c.good); }
+  else good = found(said, c.good);
+  quizAnswer(null, good, null); });
 $("qz-in").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if ($("qz-next").hidden) $("qz-ok").click(); else $("qz-next").click(); } });
-$("qz-lire").addEventListener("click", () => { const n = qz.list[qz.i]; if (n) speak(sayNotion(n, !$("qz-next").hidden)); });
+$("qz-lire").addEventListener("click", () => { if (qz.cur) speakEl($("qz-q")); });
 
 /* ---------- Jeu « Associer » : 5 mots à relier à leur phrase. Pas de chrono. ---------- */
 let mt = {sel: null, left: 0};
@@ -1406,7 +1508,7 @@ db.niv = db.niv || 2;
 const NIVX = {1: 1, 2: 1.5, 3: 2};
 const gainN = (n, why) => gain(Math.round(n * NIVX[db.niv]), why);
 function setNiv(v) { db.niv = v; save(); document.querySelectorAll(".niv button").forEach(b => b.classList.toggle("on", Number(b.dataset.n) === v));
-  $("cm-help").textContent = v === 1 ? "Facile : tes notions et des mots-clés sont déjà là. Réécris-les avec tes mots." : v === 2 ? "Moyen : seulement les grandes idées. À toi d'écrire les détails." : "Difficile : juste le sujet. Écris tout de mémoire, puis appuie sur « Vérifier ma carte »."; }
+  if (db.cmMode !== "mem") $("cm-help").textContent = v === 1 ? "Facile : tes notions et des mots-clés sont déjà là. Réécris-les avec tes mots." : v === 2 ? "Moyen : seulement les grandes idées. À toi d'écrire les détails." : "Difficile : juste le sujet. Écris tout de mémoire, puis appuie sur « Vérifier ma carte »."; }
 document.querySelectorAll(".niv button").forEach(b => b.addEventListener("click", () => { setNiv(Number(b.dataset.n)); if (!$("tab-blanche").hidden) fbStart(); }));
 setNiv(db.niv);
 const firstLetters = w => w.split(/\s+/).map(x => x.slice(0, 2) + "…").join(" ");
@@ -1420,8 +1522,22 @@ $("cm-check").addEventListener("click", () => {
   const res = ns.map(n => [n, found(said, answerOf(n))]), got = res.filter(x => x[1]).length, box = $("cm-res"); box.replaceChildren();
   const h = document.createElement("h3"); h.textContent = `${got} notion${got > 1 ? "s" : ""} sur ${ns.length} dans ta carte`; box.append(h);
   res.sort((a, b) => a[1] - b[1]).forEach(([n, ok]) => { const r = document.createElement("div"); r.className = "res " + (ok ? "ok" : "no"); r.append(ok ? "✓ " : "✗ ", holeHTML(n, true)); box.append(r); });
-  box.hidden = false; if (onceToday("cmv-" + m)) gainN(3 + got, "carte vérifiée");
+  const miss = res.filter(x => !x[1]).map(x => x[0]);
+  if (miss.length) { const row = document.createElement("div"); row.className = "row";
+    const b1 = document.createElement("button"); b1.textContent = "Ajouter les oublis à ma carte";
+    b1.addEventListener("click", () => { $("cm-text").value = $("cm-text").value.replace(/\s*$/, "") + "\n" + miss.map(n => "  " + answerOf(n) + " (oublié)").join("\n"); drawMap(); b1.disabled = true; });
+    const b2 = document.createElement("button"); b2.className = "primary"; b2.textContent = `Revoir ${miss.length > 1 ? "les " + miss.length + " oublis" : "l'oubli"} aujourd'hui`;
+    b2.addEventListener("click", () => { const now = Date.now(); miss.forEach(n => { n.due = now; }); save(); renderToday(); b2.disabled = true; note("Les oublis sont dans ta révision du jour.", "ok"); });
+    row.append(b1, b2); box.append(row); }
+  box.hidden = false; if (onceToday("cmv-" + m)) gainN((db.cmMode === "mem" ? 5 : 3) + got, "carte vérifiée");
 });
+/* Carte de mémoire (conseillé) : faire la carte sans le cours, puis comparer. Se souvenir fait plus retenir que recopier. */
+db.cmMode = db.cmMode || "mem";
+function setCmMode(v) { db.cmMode = v; save(); document.querySelectorAll("#cm-mode button").forEach(b => b.classList.toggle("on", b.dataset.c === v));
+  $("cm-notions").hidden = v === "mem"; document.querySelector("#tab-carte .niv").hidden = v === "mem"; $("cm-check").textContent = v === "mem" ? "Comparer avec le cours" : "Vérifier ma carte";
+  if (v === "mem") $("cm-help").textContent = "De mémoire : écris tout ce que tu sais, sans regarder le cours. Puis appuie sur « Comparer avec le cours ». C'est ce qui fait le plus retenir."; else setNiv(db.niv); }
+document.querySelectorAll("#cm-mode button").forEach(b => b.addEventListener("click", () => setCmMode(b.dataset.c)));
+setCmMode(db.cmMode);
 
 /* ---------- « Je bloque » : en mode Apprendre, on peut revoir le cours (on gagne alors moitié moins d'XP) ---------- */
 $("fb-help").addEventListener("click", () => {
@@ -1629,6 +1745,36 @@ const LH = {"lh-n": 1.6, "lh-l": 2, "lh-xl": 2.5};
 function setLh(id) { document.documentElement.style.setProperty("--lh", LH[id] || 1.6); Object.keys(LH).forEach(k => $(k).classList.toggle("on", k === id)); try { localStorage.setItem("alto-interligne", id); } catch (e) {} }
 Object.keys(LH).forEach(k => $(k).addEventListener("click", () => setLh(k)));
 try { setLh(localStorage.getItem("alto-interligne") || "lh-n"); } catch (e) { setLh("lh-n"); }
+
+/* ---------- Dictée partout : un bouton « Dicter » à côté de chaque case où l'on écrit ---------- */
+const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
+function addMic(id, where) {
+  const el = $(id); if (!SRC || !el) return;
+  const b = document.createElement("button"); b.type = "button"; b.className = "mic"; b.textContent = "Dicter"; b.setAttribute("aria-label", "Dicter au lieu d'écrire"); let rec = null;
+  b.addEventListener("click", () => {
+    if (rec) { rec.stop(); return; }
+    rec = new SRC(); rec.lang = "fr-FR"; rec.continuous = true;
+    rec.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) { const v = el.value; el.value = v + (/\S$/.test(v) ? " " : "") + e.results[i][0].transcript.trim(); el.dispatchEvent(new Event("input", {bubbles: true})); } };
+    rec.onend = () => { rec = null; b.textContent = "Dicter"; b.classList.remove("on"); }; rec.onerror = rec.onend;
+    try { rec.start(); b.textContent = "Arrêter la dictée"; b.classList.add("on"); el.focus(); } catch (e) { rec = null; }
+  });
+  (where ? $(where) : null) ? $(where).append(b) : el.insertAdjacentElement("afterend", b);
+}
+addMic("qz-in"); addMic("ex-in"); addMic("ex-ta"); addMic("ajout"); addMic("imp-text"); addMic("cm-text", "cm-check-row");
+
+/* ---------- Règle de lecture : une bande claire suit le doigt ou la souris, le reste de la page est assombri ---------- */
+let regle = false; try { regle = localStorage.getItem("alto-regle") === "1"; } catch (e) {}
+function placeRuler(y) {
+  const lh = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--lh")) || 1.6, band = Math.max(56, size * lh * 1.9), top = Math.max(0, y - band / 2);
+  $("ruler-t").style.top = "0"; $("ruler-t").style.height = top + "px"; $("ruler-b").style.top = (top + band) + "px"; $("ruler-b").style.bottom = "0";
+}
+function setRegle(v) { regle = v; $("ruler-t").hidden = $("ruler-b").hidden = !v; document.querySelectorAll("#regle button").forEach(b => b.classList.toggle("on", (b.dataset.r === "1") === v));
+  try { localStorage.setItem("alto-regle", v ? "1" : "0"); } catch (e) {} if (v) placeRuler(innerHeight / 2); }
+document.querySelectorAll("#regle button").forEach(b => b.addEventListener("click", () => setRegle(b.dataset.r === "1")));
+document.addEventListener("pointermove", e => { if (regle) placeRuler(e.clientY); }, {passive: true});
+document.addEventListener("touchmove", e => { if (regle && e.touches[0]) placeRuler(e.touches[0].clientY); }, {passive: true});
+document.addEventListener("focusin", e => { if (regle && e.target.getBoundingClientRect) { const r = e.target.getBoundingClientRect(); placeRuler(r.top + r.height / 2); } });
+setRegle(regle);
 
 /* Premier passage : on prend tout seul les passages marqués dans Écoute */
 /* À chaque ouverture : les nouveaux passages marqués dans Écoute arrivent tout seuls */
